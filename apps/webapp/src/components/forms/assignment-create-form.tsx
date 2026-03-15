@@ -25,6 +25,18 @@ function getTodayDate(): string {
   return currentDate.toISOString().slice(0, 10);
 }
 
+function getAssetOptionLabel(asset: AssignmentFormOption): string {
+  if (asset.status === "available" && !asset.occupiedByActiveAssignment) {
+    return asset.label;
+  }
+
+  if (asset.status === "assigned" || asset.occupiedByActiveAssignment) {
+    return `${asset.label} · assigned`;
+  }
+
+  return `${asset.label} · ${asset.status}`;
+}
+
 export function AssignmentCreateForm({ assets, customers }: AssignmentCreateFormProps) {
   const [state, formAction] = useActionState(createAssignmentAction, initialFormActionState);
   const formRef = useRef<HTMLFormElement>(null);
@@ -45,6 +57,8 @@ export function AssignmentCreateForm({ assets, customers }: AssignmentCreateForm
       </div>
 
       <form action={formAction} className="form-stack" ref={formRef}>
+        <p className="table-subcopy">Activating an assignment requires the selected asset to be currently available.</p>
+
         <div className="field-grid">
           <label className="form-field">
             <span>Customer</span>
@@ -65,7 +79,7 @@ export function AssignmentCreateForm({ assets, customers }: AssignmentCreateForm
               <option value="">Select an asset</option>
               {assets.map((asset) => (
                 <option key={asset.id} value={asset.id}>
-                  {asset.occupiedByActiveAssignment ? `${asset.label} · occupied` : asset.label}
+                  {getAssetOptionLabel(asset)}
                 </option>
               ))}
             </select>

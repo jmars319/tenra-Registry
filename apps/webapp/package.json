@@ -11,7 +11,7 @@
     "db:migrate": "node ./scripts/run-prisma.mjs migrate dev --name registry_update",
     "db:seed": "node ./scripts/run-prisma.mjs db seed",
     "db:check": "node ./scripts/db-check.mjs",
-    "db:smoke": "node ./scripts/verify-db-flow.mjs",
+    "db:smoke": "pnpm exec tsx ./scripts/verify-db-flow.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "verify": "pnpm lint && pnpm typecheck && pnpm db:check && pnpm db:smoke && pnpm build"
@@ -34,6 +34,7 @@
   "devDependencies": {
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "prisma": "latest"
+    "prisma": "latest",
+    "tsx": "latest"
   }
 }

@@ -1,7 +1,8 @@
 import type {
   CreateAssignmentRequest,
   CreateAssetRequest,
-  CreateCustomerRequest
+  CreateCustomerRequest,
+  TransitionAssignmentStatusRequest
 } from "@registry/api-contracts";
 import {
   REGISTRY_DEFAULT_ORGANIZATION_SLUG,
@@ -13,13 +14,14 @@ import type {
   Assignment,
   Asset,
   AssetStatus,
+  AssignmentTransitionTarget,
   Customer,
   CustomerStatus,
   Organization,
   OrganizationStatus
 } from "@registry/domain";
+import { canTransitionAssignmentStatus } from "@registry/domain";
 import { Prisma } from "@prisma/client";
-import "server-only";
 import { db } from "./db";
 
 const customerStatusOrder = new Map<CustomerStatus, number>([
@@ -41,6 +43,8 @@ const assignmentStatusOrder = new Map<Assignment["status"], number>([
   ["completed", 2],
   ["cancelled", 3]
 ]);
+
+type RegistryTransaction = Prisma.TransactionClient;
 
 function normalizeOptionalString(value: string | null): string | undefined {
   return value ?? undefined;
@@ -92,6 +96,78 @@ function domainAssignmentStatusToPrisma(
   value: Assignment["status"]
 ): "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED" {
   return value.toUpperCase() as "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+}
+
+function getAssetActivationErrorMessage(assetStatus: AssetStatus): string | null {
+  switch (assetStatus) {
+    case "available":
+      return null;
+    case "assigned":
+      return "This asset is already assigned and cannot be activated.";
+    case "maintenance":
+      return "This asset is in maintenance and cannot be activated.";
+    case "archived":
+      return "This asset is archived and cannot be activated.";
+    default:
+      return "This asset cannot be activated.";
+  }
+}
+
+function getAssignmentTransitionErrorMessage(
+  currentStatus: Assignment["status"],
+  nextStatus: AssignmentTransitionTarget
+): string {
+  if (currentStatus === "completed") {
+    return "Completed assignments cannot be changed.";
+  }
+
+  if (currentStatus === "cancelled") {
+    return "Cancelled assignments cannot be changed.";
+  }
+
+  if (currentStatus === nextStatus) {
+    return `This assignment is already ${currentStatus}.`;
+  }
+
+  if (currentStatus === "draft") {
+    return "Draft assignments can only be activated or cancelled.";
+  }
+
+  if (currentStatus === "active") {
+    return "Active assignments can only be completed or cancelled.";
+  }
+
+  return "This assignment transition is not allowed.";
+}
+
+async function findActiveAssignmentForAsset(
+  transaction: RegistryTransaction,
+  organizationId: string,
+  assetId: string,
+  excludeAssignmentId?: string
+) {
+  return transaction.assignment.findFirst({
+    where: {
+      organizationId,
+      assetId,
+      status: "ACTIVE",
+      ...(excludeAssignmentId
+        ? {
+            id: {
+              not: excludeAssignmentId
+            }
+          }
+        : {})
+    }
+  });
+}
+
+function assertAssetCanBeActivated(assetStatus: AssetStatus): void {
+  const errorMessage = getAssetActivationErrorMessage(assetStatus);
+
+  if (errorMessage) {
+    throw new Error(errorMessage);
+  }
 }
 
 function serializeOrganization(record: {
@@ -288,9 +364,16 @@ export interface AssignmentDetail {
   asset: Asset;
 }
 
+export interface AssignmentLifecycleResult {
+  assignment: Assignment;
+  asset: Asset;
+  customerId: string;
+}
+
 export interface AssignmentFormOption {
   id: string;
   label: string;
+  status: AssetStatus;
   occupiedByActiveAssignment: boolean;
 }
 
@@ -711,6 +794,7 @@ export async function getAssignmentFormOptions(): Promise<{
     assets: assets.map((asset) => ({
       id: asset.id,
       label: `${asset.assetCode} · ${asset.name}`,
+      status: prismaStatusToAssetStatus(asset.status),
       occupiedByActiveAssignment: asset.assignments.length > 0
     }))
   };
@@ -750,13 +834,12 @@ export async function createAssignment(input: CreateAssignmentRequest): Promise<
         }
 
         if (input.status === "active") {
-          const existingActiveAssignment = await transaction.assignment.findFirst({
-            where: {
-              organizationId: organization.id,
-              assetId: input.assetId,
-              status: "ACTIVE"
-            }
-          });
+          assertAssetCanBeActivated(prismaStatusToAssetStatus(asset.status));
+          const existingActiveAssignment = await findActiveAssignmentForAsset(
+            transaction,
+            organization.id,
+            input.assetId
+          );
 
           if (existingActiveAssignment) {
             throw new Error("That asset already has an active assignment.");
@@ -796,6 +879,122 @@ export async function createAssignment(input: CreateAssignmentRequest): Promise<
     );
 
     return serializeAssignment(assignment);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new Error("That asset already has an active assignment.");
+    }
+
+    throw error;
+  }
+}
+
+export async function transitionAssignmentStatus(
+  input: TransitionAssignmentStatusRequest
+): Promise<AssignmentLifecycleResult> {
+  const organization = await getDefaultOrganization();
+
+  if (input.organizationId !== organization.id) {
+    throw new Error("Assignments must be updated inside the default organization.");
+  }
+
+  try {
+    return await db.$transaction(
+      async (transaction) => {
+        const assignment = await transaction.assignment.findFirst({
+          where: {
+            id: input.assignmentId,
+            organizationId: organization.id
+          },
+          include: {
+            asset: true
+          }
+        });
+
+        if (!assignment) {
+          throw new Error("Assignment not found in the default organization.");
+        }
+
+        const currentStatus = prismaStatusToAssignmentStatus(assignment.status);
+
+        if (!canTransitionAssignmentStatus(currentStatus, input.nextStatus)) {
+          throw new Error(getAssignmentTransitionErrorMessage(currentStatus, input.nextStatus));
+        }
+
+        if (input.nextStatus === "active") {
+          assertAssetCanBeActivated(prismaStatusToAssetStatus(assignment.asset.status));
+          const existingActiveAssignment = await findActiveAssignmentForAsset(
+            transaction,
+            organization.id,
+            assignment.assetId,
+            assignment.id
+          );
+
+          if (existingActiveAssignment) {
+            throw new Error("That asset already has an active assignment.");
+          }
+        }
+
+        const updatedAssignment = await transaction.assignment.update({
+          where: {
+            id: assignment.id
+          },
+          data: {
+            status: domainAssignmentStatusToPrisma(input.nextStatus)
+          }
+        });
+
+        let updatedAsset = assignment.asset;
+
+        if (input.nextStatus === "active") {
+          updatedAsset = await transaction.asset.update({
+            where: {
+              id: assignment.assetId
+            },
+            data: {
+              status: "ASSIGNED"
+            }
+          });
+        }
+
+        if (currentStatus === "active" && (input.nextStatus === "completed" || input.nextStatus === "cancelled")) {
+          const otherActiveAssignment = await findActiveAssignmentForAsset(
+            transaction,
+            organization.id,
+            assignment.assetId
+          );
+
+          if (!otherActiveAssignment && assignment.asset.status === "ASSIGNED") {
+            updatedAsset = await transaction.asset.update({
+              where: {
+                id: assignment.assetId
+              },
+              data: {
+                status: "AVAILABLE"
+              }
+            });
+          } else {
+            const latestAsset = await transaction.asset.findUnique({
+              where: {
+                id: assignment.assetId
+              }
+            });
+
+            if (latestAsset) {
+              updatedAsset = latestAsset;
+            }
+          }
+        }
+
+        return {
+          assignment: serializeAssignment(updatedAssignment),
+          asset: serializeAsset(updatedAsset),
+          customerId: assignment.customerId
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+      }
+    );
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       throw new Error("That asset already has an active assignment.");

@@ -1,5 +1,6 @@
 import {
   assignmentStatuses,
+  assignmentTransitionTargets,
   assetCategories,
   assetStatuses,
   billingCadences,
@@ -84,4 +85,10 @@ export const listAssignmentsSchema = z.object({
   customerId: entityIdSchema.optional(),
   assetId: entityIdSchema.optional(),
   status: z.enum(assignmentStatuses).optional()
+});
+
+export const transitionAssignmentStatusSchema = z.object({
+  organizationId: entityIdSchema,
+  assignmentId: entityIdSchema,
+  nextStatus: z.enum(assignmentTransitionTargets)
 });

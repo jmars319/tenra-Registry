@@ -81,6 +81,17 @@ export interface CreateAssignmentResponse {
   assignment: Assignment;
 }
 
+export interface TransitionAssignmentStatusRequest {
+  organizationId: EntityId;
+  assignmentId: EntityId;
+  nextStatus: "active" | "completed" | "cancelled";
+}
+
+export interface TransitionAssignmentStatusResponse {
+  assignment: Assignment;
+  asset: Asset;
+}
+
 export interface ListAssignmentsRequest {
   organizationId: EntityId;
   customerId?: EntityId | undefined;

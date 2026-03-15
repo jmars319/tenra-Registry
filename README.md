@@ -11,12 +11,14 @@ This repository is now past the pure scaffold stage. The web app is a real full-
 - customer list, create, and detail flow
 - asset list, create, and detail flow
 - assignment list, create, and detail flow
+- assignment lifecycle actions for activate, complete, and cancel
 - active-assignment protection at the application layer and database layer
+- automatic asset release back to available when active assignments are completed or cancelled
 
 The target flow for this pass is real:
 
 ```bash
-create customer -> create asset -> create assignment -> view active assignments
+available asset -> create active assignment -> complete or cancel assignment -> asset available again -> create a new active assignment
 ```
 
 ## Monorepo Layout
@@ -53,6 +55,7 @@ pnpm doctor
 
 - The UI is intentionally single-organization for this pass, but the schema remains organization-aware.
 - Billing is intentionally simple: assignment cadence plus USD integer cents.
+- Asset lifecycle automation only moves assets between `available` and `assigned`. `maintenance` and `archived` remain manual states.
 - Invoice generation, auth provider integration, reporting, and a separate backend service are intentionally deferred.
 
 See [docs/DEVELOPER_GUIDE.md](/Users/jason_marshall/JAMARQ/Side%20Projects/Registry/docs/DEVELOPER_GUIDE.md) and [docs/REPO_MAP.md](/Users/jason_marshall/JAMARQ/Side%20Projects/Registry/docs/REPO_MAP.md) for the working details.

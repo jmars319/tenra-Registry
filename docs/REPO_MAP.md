@@ -14,9 +14,9 @@
 - `apps/webapp`: active Next.js full-stack app
 - `apps/webapp/app`: route tree for dashboard, customer, asset, assignment, and placeholder modules
 - `apps/webapp/prisma`: Prisma schema, migrations, and seed script
-- `apps/webapp/src/server`: Prisma client setup, root env loading, and operational data access
+- `apps/webapp/src/server`: Prisma client setup, root env loading, and centralized operational data and lifecycle mutations
 - `apps/webapp/src/components/forms`: create forms powered by server actions
-- `apps/webapp/src/components/registry`: small admin UI helpers for the active slice
+- `apps/webapp/src/components/registry`: small admin UI helpers for the active slice, including assignment lifecycle actions
 - `apps/desktopapp`: placeholder desktop shell using Vite, React, and Tauri
 - `apps/mobileapp`: placeholder Expo mobile shell
 

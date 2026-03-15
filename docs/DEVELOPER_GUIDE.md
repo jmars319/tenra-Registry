@@ -37,7 +37,7 @@ The web app is the only active full-stack surface right now.
 - `pnpm check:packages`: confirm required workspaces exist
 - `pnpm lint`: run ESLint across the monorepo
 - `pnpm typecheck`: run TypeScript across the monorepo
-- `pnpm verify:web`: lint, typecheck, check Prisma/database state, run a create-customer/create-asset/create-assignment smoke flow, and build the web app
+- `pnpm verify:web`: lint, typecheck, check Prisma/database state, run the assignment lifecycle smoke flow, and build the web app
 - `pnpm verify:desktop`: lint, typecheck, and build the desktop placeholder shell
 - `pnpm verify:mobile`: lint, typecheck, and export the mobile placeholder shell
 - `pnpm verify:all`: run every app verification sequence
@@ -50,3 +50,12 @@ The web app is the only active full-stack surface right now.
 3. Add a separate backend app only when the current app boundary becomes a real constraint.
 4. Keep desktop and mobile thin until they have clear, non-placeholder workflows to support.
 5. Update the docs and repo map whenever the operational path changes.
+
+## Current Lifecycle Rules
+
+- Only active assignments occupy an asset.
+- Draft assignments can be activated or cancelled.
+- Active assignments can be completed or cancelled.
+- Completing or cancelling an active assignment releases an `assigned` asset back to `available`.
+- Activation is allowed only when the asset is currently `available`.
+- `maintenance` and `archived` are manual asset states and are never overwritten by assignment lifecycle actions.

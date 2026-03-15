@@ -1,6 +1,5 @@
 import path from "node:path";
 import { loadEnvFile } from "node:process";
-import "server-only";
 
 let envLoaded = false;
 

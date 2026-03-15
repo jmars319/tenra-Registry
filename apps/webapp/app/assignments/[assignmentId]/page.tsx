@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AssignmentLifecyclePanel } from "../../../src/components/registry/assignment-lifecycle-panel";
 import { formatDateRangeLabel, formatRateLabel } from "../../../src/components/registry/formatters";
 import { StatusPill } from "../../../src/components/registry/status-pill";
 import { getAssignmentDetail } from "../../../src/server/registry-data";
@@ -78,10 +79,18 @@ export default async function AssignmentDetailPage({ params }: AssignmentDetailP
               <Link className="inline-link" href={detail.assignment.assetHref}>
                 {detail.asset.assetCode}
               </Link>
-              <p>{detail.asset.name}</p>
+              <p>
+                {detail.asset.name} · <StatusPill label={detail.asset.status} status={detail.asset.status} />
+              </p>
             </div>
           </div>
         </article>
+
+        <AssignmentLifecyclePanel
+          assignmentId={detail.assignment.id}
+          assignmentStatus={detail.assignment.status}
+          assetStatus={detail.asset.status}
+        />
       </div>
     </section>
   );

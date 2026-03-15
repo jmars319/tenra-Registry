@@ -31,7 +31,10 @@ export default async function AssignmentsPage() {
           <AssignmentCreateForm assets={formOptions.assets} customers={formOptions.customers} />
           <article className="panel-card panel-card--soft">
             <h2>Occupancy rule</h2>
-            <p>Only active assignments occupy an asset. Draft, completed, and cancelled assignments do not block reuse.</p>
+            <p>
+              Only active assignments occupy an asset. Completing or cancelling an active assignment releases that asset
+              back to available unless it has been manually moved into maintenance or archived.
+            </p>
           </article>
         </div>
 
@@ -69,7 +72,7 @@ export default async function AssignmentsPage() {
                         <Link className="table-link" href={assignment.href}>
                           View assignment
                         </Link>
-                        <div className="table-subcopy">{assignment.notes ?? "No notes"}</div>
+                        <div className="table-subcopy">{assignment.notes ?? "Open the detail view to manage lifecycle."}</div>
                       </td>
                       <td>
                         <Link className="table-link" href={assignment.customerHref}>

@@ -14,3 +14,6 @@
 - [ ] `pnpm verify:mobile` still passes for the placeholder mobile shell
 - [ ] creating a customer, asset, and assignment works end to end in the web app
 - [ ] active assignments cannot double-occupy the same asset
+- [ ] completing or cancelling an active assignment releases the asset back to `available`
+- [ ] a released asset can be assigned again in a later active assignment
+- [ ] `maintenance` and `archived` assets are never overwritten by assignment lifecycle automation

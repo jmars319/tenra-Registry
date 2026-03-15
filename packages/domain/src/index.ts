@@ -10,6 +10,7 @@ export const organizationStatuses = ["active", "inactive"] as const;
 export const customerStatuses = ["active", "inactive", "archived"] as const;
 export const assetStatuses = ["available", "assigned", "maintenance", "archived"] as const;
 export const assignmentStatuses = ["draft", "active", "completed", "cancelled"] as const;
+export const assignmentTransitionTargets = ["active", "completed", "cancelled"] as const;
 export const billingCadences = ["daily", "weekly", "monthly", "custom"] as const;
 export const invoiceStatuses = ["draft", "open", "paid", "void"] as const;
 export const balanceStates = ["current", "past-due", "settled", "credit"] as const;
@@ -19,6 +20,7 @@ export type OrganizationStatus = (typeof organizationStatuses)[number];
 export type CustomerStatus = (typeof customerStatuses)[number];
 export type AssetStatus = (typeof assetStatuses)[number];
 export type AssignmentStatus = (typeof assignmentStatuses)[number];
+export type AssignmentTransitionTarget = (typeof assignmentTransitionTargets)[number];
 export type BillingCadence = (typeof billingCadences)[number];
 export type InvoiceStatus = (typeof invoiceStatuses)[number];
 export type BalanceState = (typeof balanceStates)[number];
@@ -125,6 +127,24 @@ export function deriveBalanceState(invoice: Invoice): BalanceState {
 
 export function isAssignmentActive(assignment: Assignment): boolean {
   return assignment.status === "active";
+}
+
+const assignmentLifecycleMap: Record<AssignmentStatus, AssignmentTransitionTarget[]> = {
+  draft: ["active", "cancelled"],
+  active: ["completed", "cancelled"],
+  completed: [],
+  cancelled: []
+};
+
+export function getAllowedAssignmentTransitions(status: AssignmentStatus): AssignmentTransitionTarget[] {
+  return [...assignmentLifecycleMap[status]];
+}
+
+export function canTransitionAssignmentStatus(
+  currentStatus: AssignmentStatus,
+  nextStatus: AssignmentTransitionTarget
+): boolean {
+  return assignmentLifecycleMap[currentStatus].includes(nextStatus);
 }
 
 export function isOrganizationOperational(status: OrganizationStatus): boolean {
