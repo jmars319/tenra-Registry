@@ -1,0 +1,43 @@
+{
+  "name": "registry",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "bootstrap": "node ./scripts/bootstrap.mjs",
+    "check:env": "node ./scripts/check-env.mjs",
+    "check:packages": "node ./scripts/check-packages.mjs",
+    "dev:web": "pnpm --filter @registry/webapp dev",
+    "dev:desktop": "pnpm --filter @registry/desktopapp dev",
+    "dev:mobile": "pnpm --filter @registry/mobileapp dev",
+    "dev:both": "pnpm exec concurrently -k -n web,desktop -c blue,green \"pnpm dev:web\" \"pnpm dev:desktop\"",
+    "build:web": "pnpm --filter @registry/webapp build",
+    "build:desktop": "pnpm --filter @registry/desktopapp build",
+    "build:mobile": "pnpm --filter @registry/mobileapp build",
+    "lint": "eslint . --ext .mjs,.ts,.tsx",
+    "typecheck": "pnpm -r typecheck",
+    "verify:web": "pnpm --filter @registry/webapp verify",
+    "verify:desktop": "pnpm --filter @registry/desktopapp verify",
+    "verify:mobile": "pnpm --filter @registry/mobileapp verify",
+    "verify:all": "pnpm verify:web && pnpm verify:desktop && pnpm verify:mobile",
+    "doctor": "node ./scripts/doctor.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@next/eslint-plugin-next": "latest",
+    "@types/node": "latest",
+    "concurrently": "latest",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "eslint-plugin-react-native": "latest",
+    "globals": "latest",
+    "typescript": "latest",
+    "typescript-eslint": "latest"
+  }
+}

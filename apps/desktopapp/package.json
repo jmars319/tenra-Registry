@@ -1,0 +1,31 @@
+{
+  "name": "@registry/desktopapp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node ./scripts/dev.mjs",
+    "dev:web": "vite --host 0.0.0.0 --port 1420",
+    "dev:tauri": "tauri dev",
+    "build": "node ./scripts/build.mjs",
+    "build:web": "vite build",
+    "build:tauri": "tauri build",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build:web"
+  },
+  "dependencies": {
+    "@registry/config": "workspace:*",
+    "@registry/ui": "workspace:*",
+    "@tauri-apps/api": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest"
+  }
+}

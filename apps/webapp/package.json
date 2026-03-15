@@ -1,0 +1,29 @@
+{
+  "name": "@registry/webapp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build"
+  },
+  "dependencies": {
+    "@registry/api-contracts": "workspace:*",
+    "@registry/auth": "workspace:*",
+    "@registry/config": "workspace:*",
+    "@registry/domain": "workspace:*",
+    "@registry/ui": "workspace:*",
+    "@registry/validation": "workspace:*",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@registry/mobileapp",
+  "private": true,
+  "version": "0.1.0",
+  "main": "./index.ts",
+  "scripts": {
+    "dev": "expo start --clear",
+    "build": "expo export --platform ios",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build"
+  },
+  "dependencies": {
+    "@registry/config": "workspace:*",
+    "@registry/ui": "workspace:*",
+    "expo": "latest",
+    "expo-status-bar": "latest",
+    "react": "latest",
+    "react-native": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest"
+  }
+}

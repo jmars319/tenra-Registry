@@ -1,0 +1,49 @@
+## Dependencies
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+
+## Environment
+.env
+.env.*
+!.env.example
+!.env*.example
+.envrc
+.direnv/
+
+## Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+## Build output
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+.expo/
+.expo-shared/
+.vite/
+.cache/
+tmp/
+temp/
+*.tsbuildinfo
+
+## Desktop and mobile native artifacts
+apps/desktopapp/src-tauri/target/
+apps/desktopapp/src-tauri/gen/
+target/
+DerivedData/
+
+## Editor and OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*.orig

@@ -1,0 +1,49 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "useUnknownInCatchVariables": true,
+    "allowJs": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "jsx": "react-jsx",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@registry/shared-types": [
+        "packages/shared-types/src/index.ts"
+      ],
+      "@registry/domain": [
+        "packages/domain/src/index.ts"
+      ],
+      "@registry/api-contracts": [
+        "packages/api-contracts/src/index.ts"
+      ],
+      "@registry/validation": [
+        "packages/validation/src/index.ts"
+      ],
+      "@registry/auth": [
+        "packages/auth/src/index.ts"
+      ],
+      "@registry/ui": [
+        "packages/ui/src/index.ts"
+      ],
+      "@registry/config": [
+        "packages/config/src/index.ts"
+      ]
+    }
+  }
+}
