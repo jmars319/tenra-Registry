@@ -44,7 +44,7 @@ export function DocumentTemplateForm() {
           </label>
 
           <label className="form-field">
-            <span>Plain name</span>
+            <span>Template name</span>
             <input className="form-input" name="name" placeholder="Standard container rental agreement" required type="text" />
             <small className="field-error">{getFieldError(state.fieldErrors, "name")}</small>
           </label>
@@ -57,7 +57,7 @@ export function DocumentTemplateForm() {
         </label>
 
         <label className="form-field">
-          <span>Details Registry should fill in</span>
+          <span>Available fields</span>
           <input
             className="form-input"
             defaultValue="customer.name, unit.assetCode, rental.siteAddress, balance.amount"
@@ -72,7 +72,7 @@ export function DocumentTemplateForm() {
           <textarea
             className="form-textarea"
             name="body"
-            placeholder="Write this once. Use simple fill-ins like {{customer.name}}, {{unit.assetCode}}, {{rental.siteAddress}}, and {{balance.amount}}."
+            placeholder="Use fields such as {{customer.name}}, {{unit.assetCode}}, {{rental.siteAddress}}, and {{balance.amount}}."
             required
             rows={8}
           />

@@ -8,11 +8,10 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.eyebrow}>Mobile Placeholder</Text>
+        <Text style={styles.eyebrow}>Mobile channel</Text>
         <Text style={styles.title}>{REGISTRY_APP_NAME}</Text>
         <Text style={styles.summary}>
-          Mobile exists in the workspace so the project stays standardized, but no mobile-first workflow has been
-          committed yet.
+          Mobile is reserved for field checks, delivery notes, and quick customer reference once those workflows are ready.
         </Text>
 
         <View style={styles.card}>
@@ -29,9 +28,9 @@ export default function App() {
         </View>
 
         <View style={styles.noteCard}>
-          <Text style={styles.cardTitle}>Current expectation</Text>
+          <Text style={styles.cardTitle}>Product direction</Text>
           <Text style={styles.note}>
-            Keep the mobile app light until a real operator or field workflow exists that deserves product attention.
+            Desktop remains the primary workspace while mobile focuses on future on-site and customer-facing tasks.
           </Text>
         </View>
       </ScrollView>

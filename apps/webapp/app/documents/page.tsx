@@ -49,10 +49,10 @@ export default async function DocumentsPage() {
             templates={options.templates}
           />
           <article className="panel-card panel-card--soft">
-            <h2>Plain-language promise</h2>
+            <h2>Document workflow</h2>
             <p>
-              Office users should not need to understand merge fields. They choose the form they want, review the filled
-              document, then print it or email it.
+              Saved templates turn customer, unit, rental, site, and balance details into a ready document for review,
+              printing, or email.
             </p>
           </article>
         </div>
