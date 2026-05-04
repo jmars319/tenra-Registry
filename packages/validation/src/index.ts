@@ -135,3 +135,17 @@ export const createDocumentTemplateSchema = z.object({
   printEnabled: z.boolean(),
   emailEnabled: z.boolean()
 });
+
+export const createGeneratedDocumentSchema = z.object({
+  organizationId: entityIdSchema,
+  templateId: entityIdSchema,
+  customerId: entityIdSchema.optional(),
+  assignmentId: entityIdSchema.optional(),
+  title: z.string().trim().max(140).optional()
+}).refine(
+  (input) => Boolean(input.customerId || input.assignmentId),
+  {
+    message: "Choose a customer or rental.",
+    path: ["customerId"]
+  }
+);

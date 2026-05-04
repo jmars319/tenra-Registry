@@ -1,44 +1,58 @@
 import { getDocumentTemplateTypeLabel } from "@registry/domain";
+import Link from "next/link";
 import { DocumentTemplateForm } from "../../src/components/forms/document-template-form";
+import { GeneratedDocumentForm } from "../../src/components/forms/generated-document-form";
+import { formatDateLabel } from "../../src/components/registry/formatters";
 import { StatusPill } from "../../src/components/registry/status-pill";
-import { listDocumentTemplates } from "../../src/server/registry-data";
+import {
+  getDocumentFormOptions,
+  listGeneratedDocuments
+} from "../../src/server/registry-data";
 
 export const dynamic = "force-dynamic";
 
-const standardDocumentTypes = [
-  "Container rental agreement",
-  "Delivery ticket / proof of delivery",
-  "Pickup ticket / proof of return",
-  "Condition report",
-  "Payment receipt",
-  "Account statement",
-  "Past-due notice",
-  "Deposit receipt",
-  "General customer letter"
+const quickSteps = [
+  "Choose the paperwork",
+  "Pick the customer or rental",
+  "Review the filled document",
+  "Print or open an email draft"
 ] as const;
 
 export default async function DocumentsPage() {
-  const templates = await listDocumentTemplates();
+  const [options, documents] = await Promise.all([getDocumentFormOptions(), listGeneratedDocuments()]);
 
   return (
     <section className="stack">
-      <div className="hero-card hero-card--compact">
+      <div className="hero-card hero-card--compact document-hero">
         <p className="eyebrow">Documents</p>
-        <h1>Customizable rental documents</h1>
+        <h1>Paperwork without retyping</h1>
         <p className="hero-card__summary">
-          Maintain templates for printable and email-ready paperwork. Templates can use merge fields from customers,
-          units, rentals, balances, delivery sites, and payment records.
+          Pick a document, choose who it is for, and Registry fills in the customer, unit, site, rate, and balance
+          details. The result is ready to read, print, or email.
         </p>
+      </div>
+
+      <div className="document-step-grid">
+        {quickSteps.map((step, index) => (
+          <article className="document-step" key={step}>
+            <strong>{index + 1}</strong>
+            <span>{step}</span>
+          </article>
+        ))}
       </div>
 
       <div className="workspace-grid">
         <div className="panel-stack">
-          <DocumentTemplateForm />
+          <GeneratedDocumentForm
+            customers={options.customers}
+            rentals={options.rentals}
+            templates={options.templates}
+          />
           <article className="panel-card panel-card--soft">
-            <h2>Document boundary</h2>
+            <h2>Plain-language promise</h2>
             <p>
-              Registry should render business-approved templates. It can merge data, track template versions, print,
-              export, and prepare email delivery, but legal wording should remain reviewed and intentional.
+              Office users should not need to understand merge fields. They choose the form they want, review the filled
+              document, then print it or email it.
             </p>
           </article>
         </div>
@@ -46,39 +60,36 @@ export default async function DocumentsPage() {
         <article className="panel-card">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Template Library</p>
-              <h2>Available templates</h2>
+              <p className="eyebrow">Ready Documents</p>
+              <h2>Created paperwork</h2>
             </div>
-            <span className="pill">{templates.length} templates</span>
+            <span className="pill">{documents.length} documents</span>
           </div>
 
-          {templates.length === 0 ? (
+          {documents.length === 0 ? (
             <div className="empty-state">
-              <h3>No templates yet</h3>
-              <p>Create templates for agreements, tickets, receipts, statements, and notices.</p>
+              <h3>No documents yet</h3>
+              <p>Create the first document from a saved template.</p>
             </div>
           ) : (
-            <div className="document-grid">
-              {templates.map((template) => (
-                <article className="document-card" key={template.id}>
-                  <div className="activity-item__heading">
-                    <div>
-                      <h3>{template.name}</h3>
-                      <p className="table-subcopy">{getDocumentTemplateTypeLabel(template.type)}</p>
+            <div className="document-list">
+              {documents.map((document) => (
+                <article className="document-list-item" key={document.id}>
+                  <div>
+                    <div className="activity-item__heading">
+                      <Link className="inline-link" href={`/documents/${document.id}`}>
+                        {document.title}
+                      </Link>
+                      <StatusPill status={document.status} />
                     </div>
-                    <StatusPill status={template.active ? "active" : "inactive"} />
+                    <p>
+                      {[document.customerName, document.assetCode].filter(Boolean).join(" · ") || "General document"}
+                    </p>
+                    <p className="activity-item__meta">{formatDateLabel(document.createdAt.slice(0, 10))}</p>
                   </div>
-                  <p>{template.subject ?? "No email subject"}</p>
-                  <div className="tag-list">
-                    {template.printEnabled ? <span className="tag">Print</span> : null}
-                    {template.emailEnabled ? <span className="tag">Email</span> : null}
-                    {template.mergeFields.slice(0, 4).map((field) => (
-                      <span className="tag" key={field}>
-                        {field}
-                      </span>
-                    ))}
-                  </div>
-                  <pre className="document-preview">{template.body}</pre>
+                  <Link className="button-secondary button-link" href={`/documents/${document.id}`}>
+                    Review
+                  </Link>
                 </article>
               ))}
             </div>
@@ -89,18 +100,30 @@ export default async function DocumentsPage() {
       <article className="panel-card">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Coverage</p>
-            <h2>Standard document set</h2>
+            <p className="eyebrow">Saved Forms</p>
+            <h2>Reusable templates</h2>
           </div>
+          <span className="pill">{options.templates.length} active</span>
         </div>
-        <div className="tag-list">
-          {standardDocumentTypes.map((documentType) => (
-            <span className="tag" key={documentType}>
-              {documentType}
-            </span>
+
+        <div className="document-template-grid">
+          {options.templates.map((template) => (
+            <article className="document-template-card" key={template.id}>
+              <h3>{template.name}</h3>
+              <p>{getDocumentTemplateTypeLabel(template.type)}</p>
+              <div className="tag-list">
+                {template.printEnabled ? <span className="tag">Print</span> : null}
+                {template.emailEnabled ? <span className="tag">Email</span> : null}
+              </div>
+            </article>
           ))}
         </div>
       </article>
+
+      <details className="document-template-details">
+        <summary>Customize document wording</summary>
+        <DocumentTemplateForm />
+      </details>
     </section>
   );
 }

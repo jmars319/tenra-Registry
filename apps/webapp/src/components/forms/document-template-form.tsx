@@ -25,14 +25,14 @@ export function DocumentTemplateForm() {
       <div className="section-heading section-heading--compact">
         <div>
           <p className="eyebrow">Create Template</p>
-          <h2>Custom document wording</h2>
+          <h2>Save reusable wording</h2>
         </div>
       </div>
 
       <form action={formAction} className="form-stack" ref={formRef}>
         <div className="field-grid">
           <label className="form-field">
-            <span>Template type</span>
+            <span>Kind of paperwork</span>
             <select className="form-select" defaultValue="rental-agreement" name="type">
               {documentTemplateTypes.map((type) => (
                 <option key={type} value={type}>
@@ -44,20 +44,20 @@ export function DocumentTemplateForm() {
           </label>
 
           <label className="form-field">
-            <span>Name</span>
+            <span>Plain name</span>
             <input className="form-input" name="name" placeholder="Standard container rental agreement" required type="text" />
             <small className="field-error">{getFieldError(state.fieldErrors, "name")}</small>
           </label>
         </div>
 
         <label className="form-field">
-          <span>Email subject</span>
+            <span>Email subject line</span>
           <input className="form-input" name="subject" placeholder="Your container rental documents" type="text" />
           <small className="field-error">{getFieldError(state.fieldErrors, "subject")}</small>
         </label>
 
         <label className="form-field">
-          <span>Merge fields</span>
+          <span>Details Registry should fill in</span>
           <input
             className="form-input"
             defaultValue="customer.name, unit.assetCode, rental.siteAddress, balance.amount"
@@ -68,11 +68,11 @@ export function DocumentTemplateForm() {
         </label>
 
         <label className="form-field">
-          <span>Body</span>
+          <span>Document wording</span>
           <textarea
             className="form-textarea"
             name="body"
-            placeholder="Use merge fields like {{customer.name}} and {{unit.assetCode}}."
+            placeholder="Write this once. Use simple fill-ins like {{customer.name}}, {{unit.assetCode}}, {{rental.siteAddress}}, and {{balance.amount}}."
             required
             rows={8}
           />

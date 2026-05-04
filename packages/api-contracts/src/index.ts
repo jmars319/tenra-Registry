@@ -3,6 +3,7 @@ import type {
   Asset,
   Customer,
   DocumentTemplate,
+  GeneratedDocument,
   Organization,
   ReceivableEntry
 } from "@registry/domain";
@@ -162,4 +163,16 @@ export interface CreateDocumentTemplateRequest {
 
 export interface CreateDocumentTemplateResponse {
   template: DocumentTemplate;
+}
+
+export interface CreateGeneratedDocumentRequest {
+  organizationId: EntityId;
+  templateId: EntityId;
+  customerId?: EntityId | undefined;
+  assignmentId?: EntityId | undefined;
+  title?: GeneratedDocument["title"] | undefined;
+}
+
+export interface CreateGeneratedDocumentResponse {
+  document: GeneratedDocument;
 }

@@ -1,11 +1,18 @@
 "use server";
 
-import type { CreateDocumentTemplateRequest } from "@registry/api-contracts";
+import type {
+  CreateDocumentTemplateRequest,
+  CreateGeneratedDocumentRequest
+} from "@registry/api-contracts";
 import { registryWebRoutes } from "@registry/config";
-import { createDocumentTemplateSchema } from "@registry/validation";
+import {
+  createDocumentTemplateSchema,
+  createGeneratedDocumentSchema
+} from "@registry/validation";
 import { revalidatePath } from "next/cache";
 import {
   createDocumentTemplate,
+  createGeneratedDocument,
   getDefaultOrganization
 } from "../../src/server/registry-data";
 import {
@@ -67,5 +74,46 @@ export async function createDocumentTemplateAction(
   return {
     status: "success",
     message: "Document template created."
+  };
+}
+
+export async function createGeneratedDocumentAction(
+  _previousState: FormActionState,
+  formData: FormData
+): Promise<FormActionState> {
+  const organization = await getDefaultOrganization();
+
+  const payload: CreateGeneratedDocumentRequest = {
+    organizationId: organization.id,
+    templateId: getRequiredFormValue(formData, "templateId"),
+    customerId: getOptionalFormValue(formData, "customerId"),
+    assignmentId: getOptionalFormValue(formData, "assignmentId"),
+    title: getOptionalFormValue(formData, "title")
+  };
+
+  const result = createGeneratedDocumentSchema.safeParse(payload);
+
+  if (!result.success) {
+    return {
+      status: "error",
+      message: "Choose a document and who it is for.",
+      fieldErrors: flattenFieldErrors(result.error.flatten().fieldErrors)
+    };
+  }
+
+  try {
+    await createGeneratedDocument(result.data);
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "Document could not be created."
+    };
+  }
+
+  revalidatePath(registryWebRoutes.documents);
+
+  return {
+    status: "success",
+    message: "Document created."
   };
 }

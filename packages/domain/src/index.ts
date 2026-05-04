@@ -2,6 +2,7 @@ import type { RegistryRole } from "@registry/auth";
 import type {
   AuditFields,
   EntityId,
+  ISODateTimeString,
   ISODateString,
   MoneyAmount
 } from "@registry/shared-types";
@@ -28,6 +29,7 @@ export const documentTemplateTypes = [
   "deposit-receipt",
   "general-letter"
 ] as const;
+export const generatedDocumentStatuses = ["draft", "printed", "emailed", "archived"] as const;
 
 export type OrganizationStatus = (typeof organizationStatuses)[number];
 export type CustomerStatus = (typeof customerStatuses)[number];
@@ -41,6 +43,7 @@ export type AssetCategory = (typeof assetCategories)[number];
 export type ReceivableEntryType = (typeof receivableEntryTypes)[number];
 export type ReceivableEntryStatus = (typeof receivableEntryStatuses)[number];
 export type DocumentTemplateType = (typeof documentTemplateTypes)[number];
+export type GeneratedDocumentStatus = (typeof generatedDocumentStatuses)[number];
 
 export interface Organization extends AuditFields {
   id: EntityId;
@@ -143,6 +146,23 @@ export interface DocumentTemplate extends AuditFields {
   printEnabled: boolean;
   emailEnabled: boolean;
   active: boolean;
+}
+
+export interface GeneratedDocument extends AuditFields {
+  id: EntityId;
+  organizationId: EntityId;
+  templateId?: EntityId | undefined;
+  customerId?: EntityId | undefined;
+  assignmentId?: EntityId | undefined;
+  assetId?: EntityId | undefined;
+  type: DocumentTemplateType;
+  status: GeneratedDocumentStatus;
+  title: string;
+  subject?: string | undefined;
+  body: string;
+  recipientEmail?: string | undefined;
+  printedAt?: ISODateTimeString | undefined;
+  emailedAt?: ISODateTimeString | undefined;
 }
 
 export interface InvoiceLineItem {

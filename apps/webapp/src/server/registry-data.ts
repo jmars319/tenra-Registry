@@ -3,6 +3,7 @@ import type {
   CreateAssetRequest,
   CreateCustomerRequest,
   CreateDocumentTemplateRequest,
+  CreateGeneratedDocumentRequest,
   CreateReceivableEntryRequest,
   TransitionAssignmentStatusRequest
 } from "@registry/api-contracts";
@@ -22,6 +23,8 @@ import type {
   CustomerStatus,
   DocumentTemplate,
   DocumentTemplateType,
+  GeneratedDocument,
+  GeneratedDocumentStatus,
   Organization,
   OrganizationStatus,
   ReceivableEntry,
@@ -30,6 +33,7 @@ import type {
 } from "@registry/domain";
 import {
   canTransitionAssignmentStatus,
+  formatUsdCents,
   normalizeReceivableAmount,
   summarizeReceivableEntries
 } from "@registry/domain";
@@ -76,6 +80,7 @@ type PrismaDocumentTemplateType =
   | "PAST_DUE_NOTICE"
   | "DEPOSIT_RECEIPT"
   | "GENERAL_LETTER";
+type PrismaGeneratedDocumentStatus = "DRAFT" | "PRINTED" | "EMAILED" | "ARCHIVED";
 
 function normalizeOptionalString(value: string | null): string | undefined {
   return value ?? undefined;
@@ -153,6 +158,10 @@ function prismaDocumentTemplateTypeToDomain(value: string): DocumentTemplateType
 
 function domainDocumentTemplateTypeToPrisma(value: DocumentTemplateType): PrismaDocumentTemplateType {
   return value.toUpperCase().replaceAll("-", "_") as PrismaDocumentTemplateType;
+}
+
+function prismaGeneratedDocumentStatusToDomain(value: PrismaGeneratedDocumentStatus): GeneratedDocumentStatus {
+  return value.toLowerCase() as GeneratedDocumentStatus;
 }
 
 function getAssetActivationErrorMessage(assetStatus: AssetStatus): string | null {
@@ -437,6 +446,44 @@ function serializeDocumentTemplate(record: {
   };
 }
 
+function serializeGeneratedDocument(record: {
+  id: string;
+  organizationId: string;
+  templateId: string | null;
+  customerId: string | null;
+  assignmentId: string | null;
+  assetId: string | null;
+  type: string;
+  status: PrismaGeneratedDocumentStatus;
+  title: string;
+  subject: string | null;
+  body: string;
+  recipientEmail: string | null;
+  printedAt: Date | null;
+  emailedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}): GeneratedDocument {
+  return {
+    id: record.id,
+    organizationId: record.organizationId,
+    templateId: normalizeOptionalString(record.templateId),
+    customerId: normalizeOptionalString(record.customerId),
+    assignmentId: normalizeOptionalString(record.assignmentId),
+    assetId: normalizeOptionalString(record.assetId),
+    type: prismaDocumentTemplateTypeToDomain(record.type),
+    status: prismaGeneratedDocumentStatusToDomain(record.status),
+    title: record.title,
+    subject: normalizeOptionalString(record.subject),
+    body: record.body,
+    recipientEmail: normalizeOptionalString(record.recipientEmail),
+    printedAt: record.printedAt ? dateToIsoDateTime(record.printedAt) : undefined,
+    emailedAt: record.emailedAt ? dateToIsoDateTime(record.emailedAt) : undefined,
+    createdAt: dateToIsoDateTime(record.createdAt),
+    updatedAt: dateToIsoDateTime(record.updatedAt)
+  };
+}
+
 function sortCustomers<T extends { status: CustomerStatus; name: string }>(customers: T[]): T[] {
   return [...customers].sort((left, right) => {
     const statusDelta = (customerStatusOrder.get(left.status) ?? 99) - (customerStatusOrder.get(right.status) ?? 99);
@@ -572,6 +619,25 @@ export interface ReceivableAssignmentOption {
   label: string;
   customerId: string;
   assetId: string;
+}
+
+export interface DocumentRentalOption {
+  id: string;
+  label: string;
+  customerId: string;
+  assetId: string;
+}
+
+export interface GeneratedDocumentListItem extends GeneratedDocument {
+  customerName?: string | undefined;
+  customerHref?: string | undefined;
+  assetCode?: string | undefined;
+  assignmentHref?: string | undefined;
+}
+
+export interface GeneratedDocumentDetail {
+  document: GeneratedDocumentListItem;
+  templateName?: string | undefined;
 }
 
 export async function getDefaultOrganization(): Promise<Organization> {
@@ -1631,6 +1697,254 @@ export async function createDocumentTemplate(input: CreateDocumentTemplateReques
   });
 
   return serializeDocumentTemplate(template);
+}
+
+function renderTemplateText(templateText: string | null | undefined, values: Record<string, string>): string | null {
+  if (!templateText) {
+    return null;
+  }
+
+  return templateText.replace(/\{\{\s*([a-zA-Z0-9.]+)\s*\}\}/gu, (_match, key: string) => values[key] ?? "");
+}
+
+function formatAssignmentSite(assignment: {
+  siteName: string | null;
+  siteStreet1: string | null;
+  siteStreet2: string | null;
+  siteCity: string | null;
+  siteState: string | null;
+  sitePostalCode: string | null;
+}): string {
+  return [
+    assignment.siteName,
+    assignment.siteStreet1,
+    assignment.siteStreet2,
+    [assignment.siteCity, assignment.siteState, assignment.sitePostalCode].filter(Boolean).join(", ")
+  ]
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .join("\n");
+}
+
+export async function getDocumentFormOptions(): Promise<{
+  organization: Organization;
+  templates: DocumentTemplate[];
+  customers: ReceivableCustomerOption[];
+  rentals: DocumentRentalOption[];
+}> {
+  const [organization, templates, receivableOptions] = await Promise.all([
+    getDefaultOrganization(),
+    listDocumentTemplates(),
+    getReceivableFormOptions()
+  ]);
+
+  return {
+    organization,
+    templates: templates.filter((template) => template.active),
+    customers: receivableOptions.customers,
+    rentals: receivableOptions.assignments.map((assignment) => ({
+      id: assignment.id,
+      customerId: assignment.customerId,
+      assetId: assignment.assetId,
+      label: assignment.label
+    }))
+  };
+}
+
+export async function listGeneratedDocuments(): Promise<GeneratedDocumentListItem[]> {
+  const organization = await getDefaultOrganization();
+
+  const documents = await db.generatedDocument.findMany({
+    where: {
+      organizationId: organization.id
+    },
+    include: {
+      customer: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      assignment: {
+        select: {
+          id: true
+        }
+      },
+      asset: {
+        select: {
+          assetCode: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
+  return documents.map((document) => ({
+    ...serializeGeneratedDocument(document),
+    customerName: document.customer?.name,
+    customerHref: document.customer ? getCustomerRoute(document.customer.id) : undefined,
+    assetCode: document.asset?.assetCode,
+    assignmentHref: document.assignment ? getAssignmentRoute(document.assignment.id) : undefined
+  }));
+}
+
+export async function getGeneratedDocumentDetail(documentId: string): Promise<GeneratedDocumentDetail | null> {
+  const organization = await getDefaultOrganization();
+
+  const document = await db.generatedDocument.findFirst({
+    where: {
+      id: documentId,
+      organizationId: organization.id
+    },
+    include: {
+      template: {
+        select: {
+          name: true
+        }
+      },
+      customer: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      assignment: {
+        select: {
+          id: true
+        }
+      },
+      asset: {
+        select: {
+          assetCode: true
+        }
+      }
+    }
+  });
+
+  if (!document) {
+    return null;
+  }
+
+  return {
+    document: {
+      ...serializeGeneratedDocument(document),
+      customerName: document.customer?.name,
+      customerHref: document.customer ? getCustomerRoute(document.customer.id) : undefined,
+      assetCode: document.asset?.assetCode,
+      assignmentHref: document.assignment ? getAssignmentRoute(document.assignment.id) : undefined
+    },
+    templateName: document.template?.name
+  };
+}
+
+export async function createGeneratedDocument(input: CreateGeneratedDocumentRequest): Promise<GeneratedDocument> {
+  const organization = await getDefaultOrganization();
+
+  if (input.organizationId !== organization.id) {
+    throw new Error("Documents must be created inside the default organization.");
+  }
+
+  const template = await db.documentTemplate.findFirst({
+    where: {
+      id: input.templateId,
+      organizationId: organization.id,
+      active: true
+    }
+  });
+
+  if (!template) {
+    throw new Error("Template not found.");
+  }
+
+  const assignment = input.assignmentId
+    ? await db.assignment.findFirst({
+        where: {
+          id: input.assignmentId,
+          organizationId: organization.id
+        },
+        include: {
+          customer: {
+            include: {
+              receivableEntries: {
+                where: {
+                  status: "POSTED"
+                }
+              }
+            }
+          },
+          asset: true
+        }
+      })
+    : null;
+
+  const customerId = assignment?.customerId ?? input.customerId;
+
+  if (!customerId) {
+    throw new Error("Choose a customer or rental.");
+  }
+
+  const customer =
+    assignment?.customer ??
+    (await db.customer.findFirst({
+      where: {
+        id: customerId,
+        organizationId: organization.id
+      },
+      include: {
+        receivableEntries: {
+          where: {
+            status: "POSTED"
+          }
+        }
+      }
+    }));
+
+  if (!customer) {
+    throw new Error("Customer not found.");
+  }
+
+  const balance = summarizeReceivableEntries(customer.receivableEntries.map(serializeReceivableEntry), getTodayIsoDate());
+  const asset = assignment?.asset;
+  const values: Record<string, string> = {
+    "organization.name": organization.name,
+    "customer.name": customer.name,
+    "customer.companyName": customer.companyName ?? "",
+    "customer.email": customer.email ?? "",
+    "customer.phone": customer.phone ?? "",
+    "unit.assetCode": asset?.assetCode ?? "",
+    "unit.name": asset?.name ?? "",
+    "unit.size": asset?.sizeLabel ?? "",
+    "unit.condition": asset?.condition ?? "",
+    "rental.startDate": assignment ? dateToIsoDate(assignment.startDate) : "",
+    "rental.endDate": assignment?.endDate ? dateToIsoDate(assignment.endDate) : "",
+    "rental.rate": assignment ? formatUsdCents(assignment.rateInCents) : "",
+    "rental.siteAddress": assignment ? formatAssignmentSite(assignment) : "",
+    "rental.placementNotes": assignment?.placementNotes ?? "",
+    "balance.amount": formatUsdCents(balance.balanceInCents),
+    "balance.pastDue": formatUsdCents(balance.pastDueInCents),
+    "payment.amount": "",
+    "payment.reference": ""
+  };
+  const title =
+    input.title?.trim() ||
+    `${template.name}${customer.name ? ` - ${customer.name}` : ""}`;
+  const document = await db.generatedDocument.create({
+    data: {
+      organizationId: organization.id,
+      templateId: template.id,
+      customerId: customer.id,
+      assignmentId: assignment?.id ?? null,
+      assetId: asset?.id ?? null,
+      type: template.type,
+      title,
+      subject: renderTemplateText(template.subject, values),
+      body: renderTemplateText(template.body, values) ?? "",
+      recipientEmail: customer.email
+    }
+  });
+
+  return serializeGeneratedDocument(document);
 }
 
 export async function getReportsSnapshot(): Promise<{

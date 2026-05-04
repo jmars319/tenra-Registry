@@ -318,6 +318,45 @@ async function main() {
       }
     });
   }
+
+  await prisma.generatedDocument.upsert({
+    where: {
+      id: `seed-document-delivery-${organization.id}`
+    },
+    update: {
+      organizationId: organization.id,
+      templateId: `seed-template-delivery-${organization.id}`,
+      customerId: sampleCustomer.id,
+      assignmentId: activeRental.id,
+      assetId: activeAsset.id,
+      type: "DELIVERY_TICKET",
+      status: "DRAFT",
+      title: "Delivery ticket - Harbor Logistics",
+      subject: "Delivery ticket for CTR-1001",
+      body:
+        "Deliver CTR-1001 to Harbor Logistics overflow lot.\n\nAddress:\n500 Dockside Road\nSavannah, GA 31401\n\nPlacement notes:\nPlace container along the east fence with doors facing the warehouse.\n\nDriver notes:\n\nSignature: ______________________________",
+      recipientEmail: sampleCustomer.email,
+      printedAt: null,
+      emailedAt: null
+    },
+    create: {
+      id: `seed-document-delivery-${organization.id}`,
+      organizationId: organization.id,
+      templateId: `seed-template-delivery-${organization.id}`,
+      customerId: sampleCustomer.id,
+      assignmentId: activeRental.id,
+      assetId: activeAsset.id,
+      type: "DELIVERY_TICKET",
+      status: "DRAFT",
+      title: "Delivery ticket - Harbor Logistics",
+      subject: "Delivery ticket for CTR-1001",
+      body:
+        "Deliver CTR-1001 to Harbor Logistics overflow lot.\n\nAddress:\n500 Dockside Road\nSavannah, GA 31401\n\nPlacement notes:\nPlace container along the east fence with doors facing the warehouse.\n\nDriver notes:\n\nSignature: ______________________________",
+      recipientEmail: sampleCustomer.email,
+      printedAt: null,
+      emailedAt: null
+    }
+  });
 }
 
 main()

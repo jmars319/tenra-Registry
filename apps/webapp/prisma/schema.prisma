@@ -71,95 +71,106 @@ enum DocumentTemplateType {
   GENERAL_LETTER
 }
 
+enum GeneratedDocumentStatus {
+  DRAFT
+  PRINTED
+  EMAILED
+  ARCHIVED
+}
+
 model Organization {
-  id                String             @id @default(cuid())
-  name              String
-  slug              String             @unique
-  status            OrganizationStatus @default(ACTIVE)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  customers         Customer[]
-  assets            Asset[]
-  assignments       Assignment[]
-  receivableEntries ReceivableEntry[]
-  documentTemplates DocumentTemplate[]
+  id                 String              @id @default(cuid())
+  name               String
+  slug               String              @unique
+  status             OrganizationStatus  @default(ACTIVE)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  customers          Customer[]
+  assets             Asset[]
+  assignments        Assignment[]
+  receivableEntries  ReceivableEntry[]
+  documentTemplates  DocumentTemplate[]
+  generatedDocuments GeneratedDocument[]
 }
 
 model Customer {
-  id                String            @id @default(cuid())
-  organizationId    String
-  name              String
-  companyName       String?
-  email             String?
-  phone             String?
-  billingStreet1    String?
-  billingStreet2    String?
-  billingCity       String?
-  billingState      String?
-  billingPostalCode String?
-  billingCountry    String            @default("US")
-  notes             String?
-  status            CustomerStatus    @default(ACTIVE)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  assignments       Assignment[]
-  receivableEntries ReceivableEntry[]
+  id                 String              @id @default(cuid())
+  organizationId     String
+  name               String
+  companyName        String?
+  email              String?
+  phone              String?
+  billingStreet1     String?
+  billingStreet2     String?
+  billingCity        String?
+  billingState       String?
+  billingPostalCode  String?
+  billingCountry     String              @default("US")
+  notes              String?
+  status             CustomerStatus      @default(ACTIVE)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignments        Assignment[]
+  receivableEntries  ReceivableEntry[]
+  generatedDocuments GeneratedDocument[]
 
   @@index([organizationId, status])
 }
 
 model Asset {
-  id                String            @id @default(cuid())
-  organizationId    String
-  assetCode         String
-  name              String
-  category          AssetCategory
-  status            AssetStatus       @default(AVAILABLE)
-  currentLocation   String?
-  homeLocation      String?
-  sizeLabel         String?
-  unitType          String?
-  condition         String?
-  notes             String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  assignments       Assignment[]
-  receivableEntries ReceivableEntry[]
+  id                 String              @id @default(cuid())
+  organizationId     String
+  assetCode          String
+  name               String
+  category           AssetCategory
+  status             AssetStatus         @default(AVAILABLE)
+  currentLocation    String?
+  homeLocation       String?
+  sizeLabel          String?
+  unitType           String?
+  condition          String?
+  notes              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignments        Assignment[]
+  receivableEntries  ReceivableEntry[]
+  generatedDocuments GeneratedDocument[]
 
   @@unique([organizationId, assetCode])
   @@index([organizationId, status])
 }
 
 model Assignment {
-  id                   String            @id @default(cuid())
+  id                   String              @id @default(cuid())
   organizationId       String
   customerId           String
   assetId              String
-  startDate            DateTime          @db.Date
-  endDate              DateTime?         @db.Date
+  startDate            DateTime            @db.Date
+  endDate              DateTime?           @db.Date
   billingCadence       BillingCadence
   rateInCents          Int
-  status               AssignmentStatus  @default(DRAFT)
+  status               AssignmentStatus    @default(DRAFT)
   siteName             String?
   siteStreet1          String?
   siteStreet2          String?
   siteCity             String?
   siteState            String?
   sitePostalCode       String?
-  deliveryScheduledFor DateTime?         @db.Date
-  deliveredOn          DateTime?         @db.Date
-  pickupRequestedOn    DateTime?         @db.Date
-  pickedUpOn           DateTime?         @db.Date
+  deliveryScheduledFor DateTime?           @db.Date
+  deliveredOn          DateTime?           @db.Date
+  pickupRequestedOn    DateTime?           @db.Date
+  pickedUpOn           DateTime?           @db.Date
   placementNotes       String?
   notes                String?
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
-  organization         Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  customer             Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  asset                Asset             @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  organization         Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer             Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  asset                Asset               @relation(fields: [assetId], references: [id], onDelete: Restrict)
   receivableEntries    ReceivableEntry[]
+  generatedDocuments   GeneratedDocument[]
 
   @@index([organizationId, status])
   @@index([customerId, status])
@@ -195,20 +206,49 @@ model ReceivableEntry {
 }
 
 model DocumentTemplate {
-  id             String               @id @default(cuid())
-  organizationId String
-  type           DocumentTemplateType
-  name           String
-  subject        String?
-  body           String
-  mergeFields    String[]
-  printEnabled   Boolean              @default(true)
-  emailEnabled   Boolean              @default(true)
-  active         Boolean              @default(true)
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id                 String               @id @default(cuid())
+  organizationId     String
+  type               DocumentTemplateType
+  name               String
+  subject            String?
+  body               String
+  mergeFields        String[]
+  printEnabled       Boolean              @default(true)
+  emailEnabled       Boolean              @default(true)
+  active             Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  generatedDocuments GeneratedDocument[]
 
   @@index([organizationId, type])
   @@index([organizationId, active])
+}
+
+model GeneratedDocument {
+  id             String                  @id @default(cuid())
+  organizationId String
+  templateId     String?
+  customerId     String?
+  assignmentId   String?
+  assetId        String?
+  type           DocumentTemplateType
+  status         GeneratedDocumentStatus @default(DRAFT)
+  title          String
+  subject        String?
+  body           String
+  recipientEmail String?
+  printedAt      DateTime?
+  emailedAt      DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template       DocumentTemplate?       @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  customer       Customer?               @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  assignment     Assignment?             @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  asset          Asset?                  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([assignmentId, createdAt])
 }
