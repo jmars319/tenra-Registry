@@ -5,7 +5,9 @@ import {
   assetStatuses,
   billingCadences,
   customerStatuses,
-  organizationStatuses
+  documentTemplateTypes,
+  organizationStatuses,
+  receivableEntryTypes
 } from "@registry/domain";
 import { z } from "zod";
 
@@ -54,6 +56,10 @@ export const createAssetSchema = z.object({
   name: z.string().trim().min(1).max(120),
   category: z.enum(assetCategories),
   currentLocation: z.string().trim().max(120).optional(),
+  homeLocation: z.string().trim().max(120).optional(),
+  sizeLabel: z.string().trim().max(40).optional(),
+  unitType: z.string().trim().max(80).optional(),
+  condition: z.string().trim().max(80).optional(),
   notes: z.string().trim().max(500).optional()
 });
 
@@ -71,6 +77,17 @@ export const createAssignmentSchema = z.object({
   billingCadence: z.enum(billingCadences),
   rateInCents: z.number().int().nonnegative(),
   status: z.enum(assignmentStatuses),
+  siteName: z.string().trim().max(120).optional(),
+  siteStreet1: optionalAddressString,
+  siteStreet2: optionalAddressString,
+  siteCity: z.string().trim().max(80).optional(),
+  siteState: z.string().trim().max(80).optional(),
+  sitePostalCode: z.string().trim().max(20).optional(),
+  deliveryScheduledFor: dateSchema.optional(),
+  deliveredOn: dateSchema.optional(),
+  pickupRequestedOn: dateSchema.optional(),
+  pickedUpOn: dateSchema.optional(),
+  placementNotes: z.string().trim().max(500).optional(),
   notes: trimmedOptionalString
 }).refine(
   (input) => !input.endDate || input.endDate >= input.startDate,
@@ -91,4 +108,30 @@ export const transitionAssignmentStatusSchema = z.object({
   organizationId: entityIdSchema,
   assignmentId: entityIdSchema,
   nextStatus: z.enum(assignmentTransitionTargets)
+});
+
+export const createReceivableEntrySchema = z.object({
+  organizationId: entityIdSchema,
+  customerId: entityIdSchema,
+  assignmentId: entityIdSchema.optional(),
+  assetId: entityIdSchema.optional(),
+  type: z.enum(receivableEntryTypes),
+  description: z.string().trim().min(1).max(180),
+  effectiveDate: dateSchema,
+  dueDate: dateSchema.optional(),
+  amountInCents: z.number().int().positive(),
+  paymentMethod: z.string().trim().max(80).optional(),
+  reference: z.string().trim().max(120).optional(),
+  notes: z.string().trim().max(500).optional()
+});
+
+export const createDocumentTemplateSchema = z.object({
+  organizationId: entityIdSchema,
+  type: z.enum(documentTemplateTypes),
+  name: z.string().trim().min(1).max(120),
+  subject: z.string().trim().max(160).optional(),
+  body: z.string().trim().min(1).max(6000),
+  mergeFields: z.array(z.string().trim().min(1).max(80)).max(40),
+  printEnabled: z.boolean(),
+  emailEnabled: z.boolean()
 });

@@ -45,20 +45,48 @@ enum BillingCadence {
   CUSTOM
 }
 
+enum ReceivableEntryType {
+  CHARGE
+  PAYMENT
+  CREDIT
+  ADJUSTMENT
+  DEPOSIT
+  REFUND
+}
+
+enum ReceivableEntryStatus {
+  POSTED
+  VOID
+}
+
+enum DocumentTemplateType {
+  RENTAL_AGREEMENT
+  DELIVERY_TICKET
+  PICKUP_TICKET
+  CONDITION_REPORT
+  PAYMENT_RECEIPT
+  ACCOUNT_STATEMENT
+  PAST_DUE_NOTICE
+  DEPOSIT_RECEIPT
+  GENERAL_LETTER
+}
+
 model Organization {
-  id          String             @id @default(cuid())
-  name        String
-  slug        String             @unique
-  status      OrganizationStatus @default(ACTIVE)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  customers   Customer[]
-  assets      Asset[]
-  assignments Assignment[]
+  id                String             @id @default(cuid())
+  name              String
+  slug              String             @unique
+  status            OrganizationStatus @default(ACTIVE)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  customers         Customer[]
+  assets            Asset[]
+  assignments       Assignment[]
+  receivableEntries ReceivableEntry[]
+  documentTemplates DocumentTemplate[]
 }
 
 model Customer {
-  id                String         @id @default(cuid())
+  id                String            @id @default(cuid())
   organizationId    String
   name              String
   companyName       String?
@@ -69,53 +97,118 @@ model Customer {
   billingCity       String?
   billingState      String?
   billingPostalCode String?
-  billingCountry    String         @default("US")
+  billingCountry    String            @default("US")
   notes             String?
-  status            CustomerStatus @default(ACTIVE)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  organization      Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  status            CustomerStatus    @default(ACTIVE)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   assignments       Assignment[]
+  receivableEntries ReceivableEntry[]
 
   @@index([organizationId, status])
 }
 
 model Asset {
-  id              String       @id @default(cuid())
-  organizationId  String
-  assetCode       String
-  name            String
-  category        AssetCategory
-  status          AssetStatus  @default(AVAILABLE)
-  currentLocation String?
-  notes           String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  assignments     Assignment[]
+  id                String            @id @default(cuid())
+  organizationId    String
+  assetCode         String
+  name              String
+  category          AssetCategory
+  status            AssetStatus       @default(AVAILABLE)
+  currentLocation   String?
+  homeLocation      String?
+  sizeLabel         String?
+  unitType          String?
+  condition         String?
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignments       Assignment[]
+  receivableEntries ReceivableEntry[]
 
   @@unique([organizationId, assetCode])
   @@index([organizationId, status])
 }
 
 model Assignment {
-  id             String           @id @default(cuid())
-  organizationId String
-  customerId     String
-  assetId        String
-  startDate      DateTime         @db.Date
-  endDate        DateTime?        @db.Date
-  billingCadence BillingCadence
-  rateInCents    Int
-  status         AssignmentStatus @default(DRAFT)
-  notes          String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  customer       Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  asset          Asset            @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  id                   String            @id @default(cuid())
+  organizationId       String
+  customerId           String
+  assetId              String
+  startDate            DateTime          @db.Date
+  endDate              DateTime?         @db.Date
+  billingCadence       BillingCadence
+  rateInCents          Int
+  status               AssignmentStatus  @default(DRAFT)
+  siteName             String?
+  siteStreet1          String?
+  siteStreet2          String?
+  siteCity             String?
+  siteState            String?
+  sitePostalCode       String?
+  deliveryScheduledFor DateTime?         @db.Date
+  deliveredOn          DateTime?         @db.Date
+  pickupRequestedOn    DateTime?         @db.Date
+  pickedUpOn           DateTime?         @db.Date
+  placementNotes       String?
+  notes                String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  organization         Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer             Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  asset                Asset             @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  receivableEntries    ReceivableEntry[]
 
   @@index([organizationId, status])
   @@index([customerId, status])
   @@index([assetId, status])
+}
+
+model ReceivableEntry {
+  id             String                @id @default(cuid())
+  organizationId String
+  customerId     String
+  assignmentId   String?
+  assetId        String?
+  type           ReceivableEntryType
+  status         ReceivableEntryStatus @default(POSTED)
+  description    String
+  effectiveDate  DateTime              @db.Date
+  dueDate        DateTime?             @db.Date
+  amountInCents  Int
+  paymentMethod  String?
+  reference      String?
+  notes          String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer       Customer              @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  assignment     Assignment?           @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  asset          Asset?                @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, effectiveDate])
+  @@index([customerId, status])
+  @@index([assignmentId, status])
+  @@index([assetId, status])
+}
+
+model DocumentTemplate {
+  id             String               @id @default(cuid())
+  organizationId String
+  type           DocumentTemplateType
+  name           String
+  subject        String?
+  body           String
+  mergeFields    String[]
+  printEnabled   Boolean              @default(true)
+  emailEnabled   Boolean              @default(true)
+  active         Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, type])
+  @@index([organizationId, active])
 }

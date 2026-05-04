@@ -348,6 +348,20 @@ a {
   font-weight: 600;
 }
 
+.checkbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.checkbox-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--rg-color-muted);
+  font-weight: 600;
+}
+
 .form-input,
 .form-select,
 .form-textarea {
@@ -609,6 +623,51 @@ a {
   border: 1px solid rgba(90, 66, 34, 0.08);
 }
 
+.document-grid,
+.report-list {
+  display: grid;
+  gap: 16px;
+}
+
+.document-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--rg-radius-medium);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(90, 66, 34, 0.08);
+}
+
+.document-card h3 {
+  margin: 0;
+}
+
+.document-preview {
+  max-height: 180px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  border-radius: var(--rg-radius-small);
+  background: rgba(255, 250, 242, 0.88);
+  border: 1px solid rgba(90, 66, 34, 0.08);
+  color: var(--rg-color-muted);
+  font: 0.85rem/1.5 var(--rg-font-mono), monospace;
+  padding: 14px;
+}
+
+.report-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(90, 66, 34, 0.08);
+}
+
+.report-row:last-child {
+  border-bottom: 0;
+}
+
 @media (max-width: 1080px) {
   .shell {
     grid-template-columns: 1fr;
@@ -651,5 +710,34 @@ a {
   .lifecycle-action {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .sidebar,
+  .topbar,
+  .form-stack,
+  .button-primary,
+  .button-secondary {
+    display: none !important;
+  }
+
+  .shell,
+  .main-panel,
+  .content {
+    display: block;
+    padding: 0;
+  }
+
+  .hero-card,
+  .panel-card,
+  .metric-card,
+  .document-card {
+    box-shadow: none;
+    break-inside: avoid;
   }
 }

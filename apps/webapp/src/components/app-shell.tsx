@@ -20,7 +20,7 @@ export function AppShell({ children }: PropsWithChildren) {
           <p className="eyebrow">tenra</p>
           <h1>tenra Registry</h1>
           <p className="sidebar__copy">
-            Stable operational tracking for customers, assets, assignments, and invoices.
+            Stable operating desk for storage-container rentals, balances, documents, and reports.
           </p>
         </div>
 
@@ -49,17 +49,17 @@ export function AppShell({ children }: PropsWithChildren) {
 
         <div className="sidebar__footnote">
           <span>{formatCountLabel(registryModules.length, "core module")}</span>
-          <span>web-first scaffold</span>
+          <span>rental ops</span>
         </div>
       </aside>
 
       <div className="main-panel">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Operational Source Of Truth</p>
-            <h2>Admin workspace</h2>
+            <p className="eyebrow">Container Rental Source Of Truth</p>
+            <h2>Rental desk</h2>
           </div>
-          <div className="topbar__badge">Persistence-backed slice</div>
+          <div className="topbar__badge">Postgres-backed</div>
         </header>
 
         <main className="content">{children}</main>

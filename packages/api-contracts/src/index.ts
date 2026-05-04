@@ -2,7 +2,9 @@ import type {
   Assignment,
   Asset,
   Customer,
-  Organization
+  DocumentTemplate,
+  Organization,
+  ReceivableEntry
 } from "@registry/domain";
 import type { EntityId } from "@registry/shared-types";
 
@@ -49,6 +51,10 @@ export interface CreateAssetRequest {
   name: string;
   category: Asset["category"];
   currentLocation?: string | undefined;
+  homeLocation?: string | undefined;
+  sizeLabel?: string | undefined;
+  unitType?: string | undefined;
+  condition?: string | undefined;
   notes?: string | undefined;
 }
 
@@ -75,6 +81,17 @@ export interface CreateAssignmentRequest {
   rateInCents: Assignment["rateInCents"];
   notes?: Assignment["notes"] | undefined;
   status: Assignment["status"];
+  siteName?: Assignment["siteName"] | undefined;
+  siteStreet1?: Assignment["siteStreet1"] | undefined;
+  siteStreet2?: Assignment["siteStreet2"] | undefined;
+  siteCity?: Assignment["siteCity"] | undefined;
+  siteState?: Assignment["siteState"] | undefined;
+  sitePostalCode?: Assignment["sitePostalCode"] | undefined;
+  deliveryScheduledFor?: Assignment["deliveryScheduledFor"] | undefined;
+  deliveredOn?: Assignment["deliveredOn"] | undefined;
+  pickupRequestedOn?: Assignment["pickupRequestedOn"] | undefined;
+  pickedUpOn?: Assignment["pickedUpOn"] | undefined;
+  placementNotes?: Assignment["placementNotes"] | undefined;
 }
 
 export interface CreateAssignmentResponse {
@@ -101,4 +118,48 @@ export interface ListAssignmentsRequest {
 
 export interface ListAssignmentsResponse {
   assignments: Assignment[];
+}
+
+export interface CreateReceivableEntryRequest {
+  organizationId: EntityId;
+  customerId: EntityId;
+  assignmentId?: EntityId | undefined;
+  assetId?: EntityId | undefined;
+  type: ReceivableEntry["type"];
+  description: ReceivableEntry["description"];
+  effectiveDate: ReceivableEntry["effectiveDate"];
+  dueDate?: ReceivableEntry["dueDate"] | undefined;
+  amountInCents: ReceivableEntry["amountInCents"];
+  paymentMethod?: ReceivableEntry["paymentMethod"] | undefined;
+  reference?: ReceivableEntry["reference"] | undefined;
+  notes?: ReceivableEntry["notes"] | undefined;
+}
+
+export interface CreateReceivableEntryResponse {
+  entry: ReceivableEntry;
+}
+
+export interface ListReceivableEntriesRequest {
+  organizationId: EntityId;
+  customerId?: EntityId | undefined;
+  assignmentId?: EntityId | undefined;
+}
+
+export interface ListReceivableEntriesResponse {
+  entries: ReceivableEntry[];
+}
+
+export interface CreateDocumentTemplateRequest {
+  organizationId: EntityId;
+  type: DocumentTemplate["type"];
+  name: DocumentTemplate["name"];
+  subject?: DocumentTemplate["subject"] | undefined;
+  body: DocumentTemplate["body"];
+  mergeFields: DocumentTemplate["mergeFields"];
+  printEnabled: DocumentTemplate["printEnabled"];
+  emailEnabled: DocumentTemplate["emailEnabled"];
+}
+
+export interface CreateDocumentTemplateResponse {
+  template: DocumentTemplate;
 }

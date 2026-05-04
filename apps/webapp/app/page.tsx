@@ -1,7 +1,12 @@
 import { REGISTRY_APP_NAME, registryModules, registryWebRoutes } from "@registry/config";
 import { formatCountLabel } from "@registry/ui";
 import Link from "next/link";
-import { formatDateRangeLabel, formatRateLabel } from "../src/components/registry/formatters";
+import {
+  formatBalanceLabel,
+  formatDateLabel,
+  formatDateRangeLabel,
+  formatRateLabel
+} from "../src/components/registry/formatters";
 import { StatusPill } from "../src/components/registry/status-pill";
 import { getDashboardSnapshot } from "../src/server/registry-data";
 
@@ -14,22 +19,22 @@ export default async function DashboardPage() {
     {
       label: "Active customers",
       value: String(snapshot.counts.customers),
-      note: "Customer records currently open for operations."
+      note: "Customer accounts currently open for rental operations."
     },
     {
-      label: "Tracked assets",
-      value: String(snapshot.counts.assets),
-      note: "All assets currently stored in the operational registry."
+      label: "Container units",
+      value: String(snapshot.counts.units),
+      note: "Portable storage units tracked in inventory."
     },
     {
-      label: "Active assignments",
-      value: String(snapshot.counts.activeAssignments),
-      note: "Assets currently occupied by an active customer assignment."
+      label: "Active rentals",
+      value: String(snapshot.counts.activeRentals),
+      note: "Units currently rented to customer sites."
     },
     {
-      label: "Available assets",
-      value: String(snapshot.counts.availableAssets),
-      note: "Assets still free to assign right now."
+      label: "Balance due",
+      value: formatBalanceLabel(snapshot.counts.balanceDueInCents),
+      note: `${formatBalanceLabel(snapshot.counts.pastDueInCents)} currently past due.`
     }
   ] as const;
 
@@ -39,8 +44,8 @@ export default async function DashboardPage() {
         <p className="eyebrow">Primary Surface</p>
         <h1>{REGISTRY_APP_NAME}</h1>
         <p className="hero-card__summary">
-          Live operational workspace for {snapshot.organization.name}. Customers, assets, and assignments now persist to
-          Postgres through the web app.
+          Live rental desk for {snapshot.organization.name}. Track portable storage units, who has them, where they are,
+          who owes what, and which documents or follow-ups need attention.
         </p>
       </div>
 
@@ -59,17 +64,17 @@ export default async function DashboardPage() {
           <div className="section-heading">
             <div>
               <p className="eyebrow">Assignments</p>
-              <h2>Current active assignments</h2>
+              <h2>Current active rentals</h2>
             </div>
             <Link className="inline-link" href={registryWebRoutes.assignments}>
-              Open assignments
+              Open rentals
             </Link>
           </div>
 
           {snapshot.activeAssignments.length === 0 ? (
             <div className="empty-state">
               <h3>No active assignments yet</h3>
-              <p>Create a customer, create an asset, then create an active assignment to occupy it.</p>
+              <p>Create a customer, create a unit, then create an active rental to occupy it.</p>
             </div>
           ) : (
             <div className="activity-list">
@@ -83,7 +88,7 @@ export default async function DashboardPage() {
                       <StatusPill status={assignment.status} />
                     </div>
                     <p>
-                      {assignment.customerName} is assigned to {assignment.assetName}
+                      {assignment.customerName} is renting {assignment.assetName}
                     </p>
                     <p className="activity-item__meta">
                       {formatDateRangeLabel(assignment.startDate, assignment.endDate)} ·{" "}
@@ -99,8 +104,78 @@ export default async function DashboardPage() {
         <section className="panel-card">
           <div className="section-heading">
             <div>
+              <p className="eyebrow">Money</p>
+              <h2>Balances needing attention</h2>
+            </div>
+            <Link className="inline-link" href={registryWebRoutes.receivables}>
+              Open receivables
+            </Link>
+          </div>
+
+          {snapshot.priorityBalances.length === 0 ? (
+            <div className="empty-state empty-state--compact">
+              <h3>No open balances</h3>
+              <p>Posted charges and payments will appear here once receivables are active.</p>
+            </div>
+          ) : (
+            <div className="activity-list">
+              {snapshot.priorityBalances.map((balance) => (
+                <article className="activity-item" key={balance.customerId}>
+                  <div className="activity-item__heading">
+                    <Link className="inline-link" href={`${registryWebRoutes.customers}/${balance.customerId}`}>
+                      {balance.customerName}
+                    </Link>
+                    <StatusPill status={balance.pastDueInCents > 0 ? "overdue" : "current"} />
+                  </div>
+                  <p>{formatBalanceLabel(balance.balanceInCents)} balance</p>
+                  <p className="activity-item__meta">{formatBalanceLabel(balance.pastDueInCents)} past due</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="overview-grid">
+        <section className="panel-card">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Logistics</p>
+              <h2>Pickup queue</h2>
+            </div>
+            <span className="pill">{formatCountLabel(snapshot.pickupQueue.length, "pickup")}</span>
+          </div>
+
+          {snapshot.pickupQueue.length === 0 ? (
+            <div className="empty-state empty-state--compact">
+              <h3>No pickups requested</h3>
+              <p>Rentals with pickup requested but not picked up will appear here.</p>
+            </div>
+          ) : (
+            <div className="activity-list">
+              {snapshot.pickupQueue.map((assignment) => (
+                <article className="activity-item" key={assignment.id}>
+                  <div className="activity-item__heading">
+                    <Link className="inline-link" href={assignment.href}>
+                      {assignment.assetCode}
+                    </Link>
+                    <StatusPill status="warning" label="pickup" />
+                  </div>
+                  <p>{assignment.customerName}</p>
+                  <p className="activity-item__meta">
+                    Requested {assignment.pickupRequestedOn ? formatDateLabel(assignment.pickupRequestedOn) : "date not set"}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="panel-card">
+          <div className="section-heading">
+            <div>
               <p className="eyebrow">Modules</p>
-              <h2>Current working areas</h2>
+              <h2>Working areas</h2>
             </div>
             <span className="pill">{formatCountLabel(registryModules.length, "module")}</span>
           </div>
@@ -127,9 +202,11 @@ export default async function DashboardPage() {
         <div className="tag-list">
           <span className="tag">Postgres persistence</span>
           <span className="tag">Prisma migrations</span>
-          <span className="tag">Customer list/create/detail</span>
-          <span className="tag">Asset list/create/detail</span>
-          <span className="tag">Assignment list/create/detail</span>
+          <span className="tag">Customer balances</span>
+          <span className="tag">Container unit inventory</span>
+          <span className="tag">Rental site logistics</span>
+          <span className="tag">Receivable ledger entries</span>
+          <span className="tag">Document templates</span>
         </div>
       </section>
     </section>

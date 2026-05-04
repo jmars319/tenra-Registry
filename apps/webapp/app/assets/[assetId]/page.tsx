@@ -28,7 +28,8 @@ export default async function AssetDetailPage({ params }: AssetDetailPageProps) 
           {detail.asset.assetCode} · {detail.asset.name}
         </h1>
         <p className="hero-card__summary">
-          {detail.asset.category} · {detail.asset.currentLocation ?? "No location recorded"} · {detail.asset.notes ?? "No notes"}
+          {detail.asset.sizeLabel ?? detail.asset.category} · {detail.asset.currentLocation ?? "No location recorded"} ·{" "}
+          {detail.asset.condition ?? "No condition recorded"}
         </p>
       </div>
 
@@ -37,7 +38,7 @@ export default async function AssetDetailPage({ params }: AssetDetailPageProps) 
           <div className="section-heading">
             <div>
               <p className="eyebrow">Profile</p>
-              <h2>Asset record</h2>
+              <h2>Container unit</h2>
             </div>
             <StatusPill status={detail.asset.status} />
           </div>
@@ -48,8 +49,22 @@ export default async function AssetDetailPage({ params }: AssetDetailPageProps) 
               <dd>{detail.asset.category}</dd>
             </div>
             <div>
+              <dt>Size / type</dt>
+              <dd>
+                {[detail.asset.sizeLabel, detail.asset.unitType].filter(Boolean).join(" · ") || "Not recorded."}
+              </dd>
+            </div>
+            <div>
+              <dt>Condition</dt>
+              <dd>{detail.asset.condition ?? "No condition recorded."}</dd>
+            </div>
+            <div>
               <dt>Current location</dt>
               <dd>{detail.asset.currentLocation ?? "No location recorded."}</dd>
+            </div>
+            <div>
+              <dt>Home yard</dt>
+              <dd>{detail.asset.homeLocation ?? "No home yard recorded."}</dd>
             </div>
             <div>
               <dt>Notes</dt>
@@ -62,7 +77,7 @@ export default async function AssetDetailPage({ params }: AssetDetailPageProps) 
           <div className="section-heading">
             <div>
               <p className="eyebrow">Assignments</p>
-              <h2>Assignment history</h2>
+              <h2>Rental history</h2>
             </div>
             <span className="pill">{detail.assignments.length} total</span>
           </div>
@@ -70,7 +85,7 @@ export default async function AssetDetailPage({ params }: AssetDetailPageProps) 
           {detail.assignments.length === 0 ? (
             <div className="empty-state empty-state--compact">
               <h3>No assignments yet</h3>
-              <p>This asset has not been assigned to a customer yet.</p>
+              <p>This unit has not been rented to a customer yet.</p>
             </div>
           ) : (
             <div className="activity-list">
@@ -84,6 +99,10 @@ export default async function AssetDetailPage({ params }: AssetDetailPageProps) 
                       <StatusPill status={assignment.status} />
                     </div>
                     <p>{formatDateRangeLabel(assignment.startDate, assignment.endDate)}</p>
+                    <p className="activity-item__meta">
+                      {[assignment.siteName, assignment.siteCity, assignment.siteState].filter(Boolean).join(", ") ||
+                        "No customer site recorded"}
+                    </p>
                   </div>
                 </article>
               ))}

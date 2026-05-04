@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatDateRangeLabel } from "../../../src/components/registry/formatters";
+import {
+  formatBalanceLabel,
+  formatDateLabel,
+  formatDateRangeLabel,
+  formatSignedUsdCents
+} from "../../../src/components/registry/formatters";
 import { StatusPill } from "../../../src/components/registry/status-pill";
 import { getCustomerDetail } from "../../../src/server/registry-data";
 
@@ -27,7 +32,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
         <h1>{detail.customer.name}</h1>
         <p className="hero-card__summary">
           {detail.customer.companyName ?? "No company name on file"} · {detail.customer.email ?? "No email"} ·{" "}
-          {detail.customer.phone ?? "No phone"}
+          {detail.customer.phone ?? "No phone"} · {formatBalanceLabel(detail.balance.balanceInCents)} balance
         </p>
       </div>
 
@@ -36,7 +41,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
           <div className="section-heading">
             <div>
               <p className="eyebrow">Profile</p>
-              <h2>Customer record</h2>
+            <h2>Customer record</h2>
             </div>
             <StatusPill status={detail.customer.status} />
           </div>
@@ -71,8 +76,37 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
         <article className="panel-card">
           <div className="section-heading">
             <div>
+              <p className="eyebrow">Balance</p>
+              <h2>Account standing</h2>
+            </div>
+            <StatusPill status={detail.balance.pastDueInCents > 0 ? "overdue" : "current"} />
+          </div>
+
+          <dl className="detail-list">
+            <div>
+              <dt>Total charges</dt>
+              <dd>{formatBalanceLabel(detail.balance.totalChargesInCents)}</dd>
+            </div>
+            <div>
+              <dt>Payments and credits</dt>
+              <dd>{formatBalanceLabel(detail.balance.totalCreditsInCents)}</dd>
+            </div>
+            <div>
+              <dt>Current balance</dt>
+              <dd>{formatBalanceLabel(detail.balance.balanceInCents)}</dd>
+            </div>
+            <div>
+              <dt>Past due</dt>
+              <dd>{formatBalanceLabel(detail.balance.pastDueInCents)}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article className="panel-card">
+          <div className="section-heading">
+            <div>
               <p className="eyebrow">Assignments</p>
-              <h2>Assignment history</h2>
+              <h2>Rental history</h2>
             </div>
             <span className="pill">{detail.assignments.length} total</span>
           </div>
@@ -80,7 +114,7 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
           {detail.assignments.length === 0 ? (
             <div className="empty-state empty-state--compact">
               <h3>No assignments yet</h3>
-              <p>This customer has not been assigned an asset yet.</p>
+              <p>This customer has not rented a container yet.</p>
             </div>
           ) : (
             <div className="activity-list">
@@ -96,6 +130,41 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
                     <p>{assignment.assetName}</p>
                     <p className="activity-item__meta">{formatDateRangeLabel(assignment.startDate, assignment.endDate)}</p>
                   </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </article>
+
+        <article className="panel-card">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Receivables</p>
+              <h2>Charges and payments</h2>
+            </div>
+            <Link className="inline-link" href="/receivables">
+              Post entry
+            </Link>
+          </div>
+
+          {detail.receivableEntries.length === 0 ? (
+            <div className="empty-state empty-state--compact">
+              <h3>No ledger entries</h3>
+              <p>Charges, payments, credits, deposits, and adjustments will appear here.</p>
+            </div>
+          ) : (
+            <div className="activity-list">
+              {detail.receivableEntries.slice(0, 8).map((entry) => (
+                <article className="activity-item" key={entry.id}>
+                  <div className="activity-item__heading">
+                    <strong>{entry.description}</strong>
+                    <StatusPill status={entry.status} label={entry.type} />
+                  </div>
+                  <p>{formatSignedUsdCents(entry.amountInCents)}</p>
+                  <p className="activity-item__meta">
+                    {formatDateLabel(entry.effectiveDate)}
+                    {entry.dueDate ? ` · due ${formatDateLabel(entry.dueDate)}` : ""}
+                  </p>
                 </article>
               ))}
             </div>

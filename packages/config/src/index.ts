@@ -9,6 +9,8 @@ export const registryWebRoutes = {
   customers: "/customers",
   assets: "/assets",
   assignments: "/assignments",
+  receivables: "/receivables",
+  documents: "/documents",
   invoices: "/invoices",
   reports: "/reports",
   settings: "/settings"
@@ -30,26 +32,32 @@ export const registryModules = [
   {
     key: "customers",
     title: "Customers",
-    description: "Account ownership, billing contacts, and operating notes.",
+    description: "Customer accounts, billing contacts, balances, and rental history.",
     href: registryWebRoutes.customers
   },
   {
     key: "assets",
-    title: "Assets",
-    description: "Units, equipment, and tracked operational inventory.",
+    title: "Units",
+    description: "Portable shipping containers, yard inventory, condition, and location state.",
     href: registryWebRoutes.assets
   },
   {
     key: "assignments",
-    title: "Assignments",
-    description: "Generalized customer-to-asset allocations with room for rental workflows.",
+    title: "Rentals",
+    description: "Customer-to-container rentals, delivery sites, pickup state, and rates.",
     href: registryWebRoutes.assignments
   },
   {
-    key: "invoices",
-    title: "Invoices",
-    description: "Open balances, issued invoices, and payment follow-up.",
-    href: registryWebRoutes.invoices
+    key: "receivables",
+    title: "Receivables",
+    description: "Charges, deposits, payments, credits, balances, and overdue accounts.",
+    href: registryWebRoutes.receivables
+  },
+  {
+    key: "documents",
+    title: "Documents",
+    description: "Customizable rental, delivery, pickup, receipt, statement, and notice templates.",
+    href: registryWebRoutes.documents
   },
   {
     key: "reports",

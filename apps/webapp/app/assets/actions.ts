@@ -25,6 +25,10 @@ export async function createAssetAction(
     name: getRequiredFormValue(formData, "name"),
     category: getRequiredFormValue(formData, "category") as CreateAssetRequest["category"],
     currentLocation: getOptionalFormValue(formData, "currentLocation"),
+    homeLocation: getOptionalFormValue(formData, "homeLocation"),
+    sizeLabel: getOptionalFormValue(formData, "sizeLabel"),
+    unitType: getOptionalFormValue(formData, "unitType"),
+    condition: getOptionalFormValue(formData, "condition"),
     notes: getOptionalFormValue(formData, "notes")
   };
 
@@ -33,7 +37,7 @@ export async function createAssetAction(
   if (!result.success) {
     return {
       status: "error",
-      message: "Asset details need attention.",
+      message: "Unit details need attention.",
       fieldErrors: flattenFieldErrors(result.error.flatten().fieldErrors)
     };
   }
@@ -44,25 +48,26 @@ export async function createAssetAction(
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return {
         status: "error",
-        message: "That asset code already exists.",
+        message: "That unit code already exists.",
         fieldErrors: {
-          assetCode: "Use a unique asset code within the organization."
+          assetCode: "Use a unique unit code within the organization."
         }
       };
     }
 
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "Asset could not be created."
+      message: error instanceof Error ? error.message : "Unit could not be created."
     };
   }
 
   revalidatePath(registryWebRoutes.dashboard);
   revalidatePath(registryWebRoutes.assets);
   revalidatePath(registryWebRoutes.assignments);
+  revalidatePath(registryWebRoutes.reports);
 
   return {
     status: "success",
-    message: "Asset created."
+    message: "Unit created."
   };
 }

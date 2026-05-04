@@ -2,6 +2,8 @@ import type {
   CreateAssignmentRequest,
   CreateAssetRequest,
   CreateCustomerRequest,
+  CreateDocumentTemplateRequest,
+  CreateReceivableEntryRequest,
   TransitionAssignmentStatusRequest
 } from "@registry/api-contracts";
 import {
@@ -16,11 +18,21 @@ import type {
   AssetStatus,
   AssignmentTransitionTarget,
   Customer,
+  CustomerBalanceSummary,
   CustomerStatus,
+  DocumentTemplate,
+  DocumentTemplateType,
   Organization,
-  OrganizationStatus
+  OrganizationStatus,
+  ReceivableEntry,
+  ReceivableEntryStatus,
+  ReceivableEntryType
 } from "@registry/domain";
-import { canTransitionAssignmentStatus } from "@registry/domain";
+import {
+  canTransitionAssignmentStatus,
+  normalizeReceivableAmount,
+  summarizeReceivableEntries
+} from "@registry/domain";
 import { Prisma } from "@prisma/client";
 import { db } from "./db";
 
@@ -44,7 +56,26 @@ const assignmentStatusOrder = new Map<Assignment["status"], number>([
   ["cancelled", 3]
 ]);
 
+const receivableTypeOrder = new Map<ReceivableEntryType, number>([
+  ["charge", 0],
+  ["deposit", 1],
+  ["adjustment", 2],
+  ["refund", 3],
+  ["payment", 4],
+  ["credit", 5]
+]);
+
 type RegistryTransaction = Prisma.TransactionClient;
+type PrismaDocumentTemplateType =
+  | "RENTAL_AGREEMENT"
+  | "DELIVERY_TICKET"
+  | "PICKUP_TICKET"
+  | "CONDITION_REPORT"
+  | "PAYMENT_RECEIPT"
+  | "ACCOUNT_STATEMENT"
+  | "PAST_DUE_NOTICE"
+  | "DEPOSIT_RECEIPT"
+  | "GENERAL_LETTER";
 
 function normalizeOptionalString(value: string | null): string | undefined {
   return value ?? undefined;
@@ -64,6 +95,10 @@ function dateToIsoDateTime(value: Date): string {
 
 function parseDateOnly(value: string): Date {
   return new Date(`${value}T00:00:00.000Z`);
+}
+
+function getTodayIsoDate(): string {
+  return dateToIsoDate(new Date());
 }
 
 function prismaStatusToOrganizationStatus(value: "ACTIVE" | "INACTIVE"): OrganizationStatus {
@@ -98,18 +133,40 @@ function domainAssignmentStatusToPrisma(
   return value.toUpperCase() as "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 }
 
+function prismaReceivableTypeToDomain(value: "CHARGE" | "PAYMENT" | "CREDIT" | "ADJUSTMENT" | "DEPOSIT" | "REFUND"): ReceivableEntryType {
+  return value.toLowerCase() as ReceivableEntryType;
+}
+
+function domainReceivableTypeToPrisma(
+  value: ReceivableEntryType
+): "CHARGE" | "PAYMENT" | "CREDIT" | "ADJUSTMENT" | "DEPOSIT" | "REFUND" {
+  return value.toUpperCase() as "CHARGE" | "PAYMENT" | "CREDIT" | "ADJUSTMENT" | "DEPOSIT" | "REFUND";
+}
+
+function prismaReceivableStatusToDomain(value: "POSTED" | "VOID"): ReceivableEntryStatus {
+  return value.toLowerCase() as ReceivableEntryStatus;
+}
+
+function prismaDocumentTemplateTypeToDomain(value: string): DocumentTemplateType {
+  return value.toLowerCase().replaceAll("_", "-") as DocumentTemplateType;
+}
+
+function domainDocumentTemplateTypeToPrisma(value: DocumentTemplateType): PrismaDocumentTemplateType {
+  return value.toUpperCase().replaceAll("-", "_") as PrismaDocumentTemplateType;
+}
+
 function getAssetActivationErrorMessage(assetStatus: AssetStatus): string | null {
   switch (assetStatus) {
     case "available":
       return null;
     case "assigned":
-      return "This asset is already assigned and cannot be activated.";
+      return "This unit is already rented and cannot be activated.";
     case "maintenance":
-      return "This asset is in maintenance and cannot be activated.";
+      return "This unit is in maintenance and cannot be activated.";
     case "archived":
-      return "This asset is archived and cannot be activated.";
+      return "This unit is archived and cannot be activated.";
     default:
-      return "This asset cannot be activated.";
+      return "This unit cannot be activated.";
   }
 }
 
@@ -118,11 +175,11 @@ function getAssignmentTransitionErrorMessage(
   nextStatus: AssignmentTransitionTarget
 ): string {
   if (currentStatus === "completed") {
-    return "Completed assignments cannot be changed.";
+    return "Completed rentals cannot be changed.";
   }
 
   if (currentStatus === "cancelled") {
-    return "Cancelled assignments cannot be changed.";
+    return "Cancelled rentals cannot be changed.";
   }
 
   if (currentStatus === nextStatus) {
@@ -130,14 +187,14 @@ function getAssignmentTransitionErrorMessage(
   }
 
   if (currentStatus === "draft") {
-    return "Draft assignments can only be activated or cancelled.";
+    return "Draft rentals can only be activated or cancelled.";
   }
 
   if (currentStatus === "active") {
-    return "Active assignments can only be completed or cancelled.";
+    return "Active rentals can only be completed or cancelled.";
   }
 
-  return "This assignment transition is not allowed.";
+  return "This rental transition is not allowed.";
 }
 
 async function findActiveAssignmentForAsset(
@@ -234,6 +291,10 @@ function serializeAsset(record: {
   category: "UNIT" | "VEHICLE" | "EQUIPMENT" | "OTHER";
   status: "AVAILABLE" | "ASSIGNED" | "MAINTENANCE" | "ARCHIVED";
   currentLocation: string | null;
+  homeLocation: string | null;
+  sizeLabel: string | null;
+  unitType: string | null;
+  condition: string | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -246,6 +307,10 @@ function serializeAsset(record: {
     category: record.category.toLowerCase() as Asset["category"],
     status: prismaStatusToAssetStatus(record.status),
     currentLocation: normalizeOptionalString(record.currentLocation),
+    homeLocation: normalizeOptionalString(record.homeLocation),
+    sizeLabel: normalizeOptionalString(record.sizeLabel),
+    unitType: normalizeOptionalString(record.unitType),
+    condition: normalizeOptionalString(record.condition),
     notes: normalizeOptionalString(record.notes),
     createdAt: dateToIsoDateTime(record.createdAt),
     updatedAt: dateToIsoDateTime(record.updatedAt)
@@ -262,6 +327,17 @@ function serializeAssignment(record: {
   billingCadence: "DAILY" | "WEEKLY" | "MONTHLY" | "CUSTOM";
   rateInCents: number;
   status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+  siteName: string | null;
+  siteStreet1: string | null;
+  siteStreet2: string | null;
+  siteCity: string | null;
+  siteState: string | null;
+  sitePostalCode: string | null;
+  deliveryScheduledFor: Date | null;
+  deliveredOn: Date | null;
+  pickupRequestedOn: Date | null;
+  pickedUpOn: Date | null;
+  placementNotes: string | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -276,7 +352,86 @@ function serializeAssignment(record: {
     billingCadence: prismaCadenceToDomain(record.billingCadence),
     rateInCents: record.rateInCents,
     status: prismaStatusToAssignmentStatus(record.status),
+    siteName: normalizeOptionalString(record.siteName),
+    siteStreet1: normalizeOptionalString(record.siteStreet1),
+    siteStreet2: normalizeOptionalString(record.siteStreet2),
+    siteCity: normalizeOptionalString(record.siteCity),
+    siteState: normalizeOptionalString(record.siteState),
+    sitePostalCode: normalizeOptionalString(record.sitePostalCode),
+    deliveryScheduledFor: record.deliveryScheduledFor ? dateToIsoDate(record.deliveryScheduledFor) : undefined,
+    deliveredOn: record.deliveredOn ? dateToIsoDate(record.deliveredOn) : undefined,
+    pickupRequestedOn: record.pickupRequestedOn ? dateToIsoDate(record.pickupRequestedOn) : undefined,
+    pickedUpOn: record.pickedUpOn ? dateToIsoDate(record.pickedUpOn) : undefined,
+    placementNotes: normalizeOptionalString(record.placementNotes),
     notes: normalizeOptionalString(record.notes),
+    createdAt: dateToIsoDateTime(record.createdAt),
+    updatedAt: dateToIsoDateTime(record.updatedAt)
+  };
+}
+
+function serializeReceivableEntry(record: {
+  id: string;
+  organizationId: string;
+  customerId: string;
+  assignmentId: string | null;
+  assetId: string | null;
+  type: "CHARGE" | "PAYMENT" | "CREDIT" | "ADJUSTMENT" | "DEPOSIT" | "REFUND";
+  status: "POSTED" | "VOID";
+  description: string;
+  effectiveDate: Date;
+  dueDate: Date | null;
+  amountInCents: number;
+  paymentMethod: string | null;
+  reference: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}): ReceivableEntry {
+  return {
+    id: record.id,
+    organizationId: record.organizationId,
+    customerId: record.customerId,
+    assignmentId: normalizeOptionalString(record.assignmentId),
+    assetId: normalizeOptionalString(record.assetId),
+    type: prismaReceivableTypeToDomain(record.type),
+    status: prismaReceivableStatusToDomain(record.status),
+    description: record.description,
+    effectiveDate: dateToIsoDate(record.effectiveDate),
+    dueDate: record.dueDate ? dateToIsoDate(record.dueDate) : undefined,
+    amountInCents: record.amountInCents,
+    paymentMethod: normalizeOptionalString(record.paymentMethod),
+    reference: normalizeOptionalString(record.reference),
+    notes: normalizeOptionalString(record.notes),
+    createdAt: dateToIsoDateTime(record.createdAt),
+    updatedAt: dateToIsoDateTime(record.updatedAt)
+  };
+}
+
+function serializeDocumentTemplate(record: {
+  id: string;
+  organizationId: string;
+  type: string;
+  name: string;
+  subject: string | null;
+  body: string;
+  mergeFields: string[];
+  printEnabled: boolean;
+  emailEnabled: boolean;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}): DocumentTemplate {
+  return {
+    id: record.id,
+    organizationId: record.organizationId,
+    type: prismaDocumentTemplateTypeToDomain(record.type),
+    name: record.name,
+    subject: normalizeOptionalString(record.subject),
+    body: record.body,
+    mergeFields: record.mergeFields,
+    printEnabled: record.printEnabled,
+    emailEnabled: record.emailEnabled,
+    active: record.active,
     createdAt: dateToIsoDateTime(record.createdAt),
     updatedAt: dateToIsoDateTime(record.updatedAt)
   };
@@ -319,6 +474,18 @@ function sortAssignments<T extends { status: Assignment["status"]; startDate: st
   });
 }
 
+function sortReceivableEntries<T extends { effectiveDate: string; type: ReceivableEntryType }>(entries: T[]): T[] {
+  return [...entries].sort((left, right) => {
+    const dateDelta = right.effectiveDate.localeCompare(left.effectiveDate);
+
+    if (dateDelta !== 0) {
+      return dateDelta;
+    }
+
+    return (receivableTypeOrder.get(left.type) ?? 99) - (receivableTypeOrder.get(right.type) ?? 99);
+  });
+}
+
 export interface DashboardAssignmentItem extends Assignment {
   href: string;
   customerName: string;
@@ -329,11 +496,15 @@ export interface DashboardAssignmentItem extends Assignment {
 export interface CustomerListItem extends Customer {
   href: string;
   activeAssignmentCount: number;
+  balanceInCents: number;
+  pastDueInCents: number;
 }
 
 export interface CustomerDetail {
   customer: Customer;
   assignments: DashboardAssignmentItem[];
+  receivableEntries: ReceivableListItem[];
+  balance: CustomerBalanceSummary;
 }
 
 export interface AssetListItem extends Asset {
@@ -341,6 +512,9 @@ export interface AssetListItem extends Asset {
   activeAssignment?: {
     assignmentId: string;
     customerName: string;
+    siteName?: string | undefined;
+    siteCity?: string | undefined;
+    siteState?: string | undefined;
   } | undefined;
 }
 
@@ -362,6 +536,8 @@ export interface AssignmentDetail {
   assignment: AssignmentListItem;
   customer: Customer;
   asset: Asset;
+  receivableEntries: ReceivableListItem[];
+  balanceInCents: number;
 }
 
 export interface AssignmentLifecycleResult {
@@ -375,6 +551,27 @@ export interface AssignmentFormOption {
   label: string;
   status: AssetStatus;
   occupiedByActiveAssignment: boolean;
+}
+
+export interface ReceivableListItem extends ReceivableEntry {
+  customerName: string;
+  customerHref: string;
+  assignmentHref?: string | undefined;
+  assetCode?: string | undefined;
+  assetName?: string | undefined;
+  assetHref?: string | undefined;
+}
+
+export interface ReceivableCustomerOption {
+  id: string;
+  label: string;
+}
+
+export interface ReceivableAssignmentOption {
+  id: string;
+  label: string;
+  customerId: string;
+  assetId: string;
 }
 
 export async function getDefaultOrganization(): Promise<Organization> {
@@ -401,15 +598,31 @@ export async function getDashboardSnapshot(): Promise<{
   organization: Organization;
   counts: {
     customers: number;
-    assets: number;
-    activeAssignments: number;
-    availableAssets: number;
+    units: number;
+    activeRentals: number;
+    availableUnits: number;
+    balanceDueInCents: number;
+    pastDueInCents: number;
+    paymentsThisMonthInCents: number;
   };
   activeAssignments: DashboardAssignmentItem[];
+  priorityBalances: CustomerBalanceSummary[];
+  pickupQueue: DashboardAssignmentItem[];
 }> {
   const organization = await getDefaultOrganization();
+  const today = getTodayIsoDate();
+  const monthStart = today.slice(0, 8) + "01";
 
-  const [customers, assets, activeAssignmentsCount, availableAssets, activeAssignments] = await Promise.all([
+  const [
+    customers,
+    units,
+    activeRentals,
+    availableUnits,
+    activeAssignments,
+    pickupQueue,
+    receivableEntries,
+    customersWithEntries
+  ] = await Promise.all([
     db.customer.count({
       where: {
         organizationId: organization.id,
@@ -418,7 +631,8 @@ export async function getDashboardSnapshot(): Promise<{
     }),
     db.asset.count({
       where: {
-        organizationId: organization.id
+        organizationId: organization.id,
+        category: "UNIT"
       }
     }),
     db.assignment.count({
@@ -430,7 +644,8 @@ export async function getDashboardSnapshot(): Promise<{
     db.asset.count({
       where: {
         organizationId: organization.id,
-        status: "AVAILABLE"
+        status: "AVAILABLE",
+        category: "UNIT"
       }
     }),
     db.assignment.findMany({
@@ -455,18 +670,89 @@ export async function getDashboardSnapshot(): Promise<{
         startDate: "desc"
       },
       take: 5
+    }),
+    db.assignment.findMany({
+      where: {
+        organizationId: organization.id,
+        status: "ACTIVE",
+        pickupRequestedOn: {
+          not: null
+        },
+        pickedUpOn: null
+      },
+      include: {
+        customer: {
+          select: {
+            name: true
+          }
+        },
+        asset: {
+          select: {
+            assetCode: true,
+            name: true
+          }
+        }
+      },
+      orderBy: {
+        pickupRequestedOn: "asc"
+      },
+      take: 5
+    }),
+    db.receivableEntry.findMany({
+      where: {
+        organizationId: organization.id,
+        status: "POSTED"
+      }
+    }),
+    db.customer.findMany({
+      where: {
+        organizationId: organization.id
+      },
+      include: {
+        receivableEntries: {
+          where: {
+            status: "POSTED"
+          }
+        }
+      }
     })
   ]);
+
+  const receivableSummary = summarizeReceivableEntries(receivableEntries.map(serializeReceivableEntry), today);
+  const priorityBalances = customersWithEntries
+    .map((customer) => ({
+      customerId: customer.id,
+      customerName: customer.name,
+      ...summarizeReceivableEntries(customer.receivableEntries.map(serializeReceivableEntry), today)
+    }))
+    .filter((balance) => balance.balanceInCents > 0 || balance.pastDueInCents > 0)
+    .sort((left, right) => right.pastDueInCents - left.pastDueInCents || right.balanceInCents - left.balanceInCents)
+    .slice(0, 5);
+  const paymentsThisMonthInCents = receivableEntries
+    .map(serializeReceivableEntry)
+    .filter((entry) => entry.amountInCents < 0 && entry.effectiveDate >= monthStart)
+    .reduce((total, entry) => total + Math.abs(entry.amountInCents), 0);
 
   return {
     organization,
     counts: {
       customers,
-      assets,
-      activeAssignments: activeAssignmentsCount,
-      availableAssets
+      units,
+      activeRentals,
+      availableUnits,
+      balanceDueInCents: receivableSummary.balanceInCents,
+      pastDueInCents: receivableSummary.pastDueInCents,
+      paymentsThisMonthInCents
     },
     activeAssignments: activeAssignments.map((assignment) => ({
+      ...serializeAssignment(assignment),
+      href: getAssignmentRoute(assignment.id),
+      customerName: assignment.customer.name,
+      assetCode: assignment.asset.assetCode,
+      assetName: assignment.asset.name
+    })),
+    priorityBalances,
+    pickupQueue: pickupQueue.map((assignment) => ({
       ...serializeAssignment(assignment),
       href: getAssignmentRoute(assignment.id),
       customerName: assignment.customer.name,
@@ -491,16 +777,28 @@ export async function listCustomers(): Promise<CustomerListItem[]> {
         select: {
           id: true
         }
+      },
+      receivableEntries: {
+        where: {
+          status: "POSTED"
+        }
       }
     }
   });
+  const today = getTodayIsoDate();
 
   return sortCustomers(
-    records.map((record) => ({
-      ...serializeCustomer(record),
-      href: getCustomerRoute(record.id),
-      activeAssignmentCount: record.assignments.length
-    }))
+    records.map((record) => {
+      const balance = summarizeReceivableEntries(record.receivableEntries.map(serializeReceivableEntry), today);
+
+      return {
+        ...serializeCustomer(record),
+        href: getCustomerRoute(record.id),
+        activeAssignmentCount: record.assignments.length,
+        balanceInCents: balance.balanceInCents,
+        pastDueInCents: balance.pastDueInCents
+      };
+    })
   );
 }
 
@@ -518,25 +816,66 @@ export async function getCustomerDetail(customerId: string): Promise<CustomerDet
     return null;
   }
 
-  const assignments = await db.assignment.findMany({
-    where: {
-      customerId,
-      organizationId: organization.id
-    },
-    include: {
-      customer: {
-        select: {
-          name: true
-        }
+  const [assignments, receivableEntries] = await Promise.all([
+    db.assignment.findMany({
+      where: {
+        customerId,
+        organizationId: organization.id
       },
-      asset: {
-        select: {
-          assetCode: true,
-          name: true
+      include: {
+        customer: {
+          select: {
+            name: true
+          }
+        },
+        asset: {
+          select: {
+            id: true,
+            assetCode: true,
+            name: true
+          }
         }
       }
-    }
-  });
+    }),
+    db.receivableEntry.findMany({
+      where: {
+        customerId,
+        organizationId: organization.id
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        assignment: {
+          select: {
+            id: true
+          }
+        },
+        asset: {
+          select: {
+            id: true,
+            assetCode: true,
+            name: true
+          }
+        }
+      }
+    })
+  ]);
+
+  const serializedEntries = sortReceivableEntries(
+    receivableEntries.map((entry) => ({
+      ...serializeReceivableEntry(entry),
+      customerName: entry.customer.name,
+      customerHref: getCustomerRoute(entry.customer.id),
+      assignmentHref: entry.assignment ? getAssignmentRoute(entry.assignment.id) : undefined,
+      assetCode: entry.asset?.assetCode,
+      assetName: entry.asset?.name,
+      assetHref: entry.asset ? getAssetRoute(entry.asset.id) : undefined
+    }))
+  );
 
   return {
     customer: serializeCustomer(customer),
@@ -548,7 +887,13 @@ export async function getCustomerDetail(customerId: string): Promise<CustomerDet
         assetCode: assignment.asset.assetCode,
         assetName: assignment.asset.name
       }))
-    )
+    ),
+    receivableEntries: serializedEntries,
+    balance: {
+      customerId: customer.id,
+      customerName: customer.name,
+      ...summarizeReceivableEntries(serializedEntries, getTodayIsoDate())
+    }
   };
 }
 
@@ -588,6 +933,9 @@ export async function listAssets(): Promise<AssetListItem[]> {
         },
         select: {
           id: true,
+          siteName: true,
+          siteCity: true,
+          siteState: true,
           customer: {
             select: {
               name: true
@@ -605,7 +953,10 @@ export async function listAssets(): Promise<AssetListItem[]> {
       activeAssignment: record.assignments[0]
         ? {
             assignmentId: record.assignments[0].id,
-            customerName: record.assignments[0].customer.name
+            customerName: record.assignments[0].customer.name,
+            siteName: normalizeOptionalString(record.assignments[0].siteName),
+            siteCity: normalizeOptionalString(record.assignments[0].siteCity),
+            siteState: normalizeOptionalString(record.assignments[0].siteState)
           }
         : undefined
     }))
@@ -669,6 +1020,10 @@ export async function createAsset(input: CreateAssetRequest): Promise<Asset> {
       category: input.category.toUpperCase() as "UNIT" | "VEHICLE" | "EQUIPMENT" | "OTHER",
       status: "AVAILABLE",
       currentLocation: normalizeNullableString(input.currentLocation),
+      homeLocation: normalizeNullableString(input.homeLocation),
+      sizeLabel: normalizeNullableString(input.sizeLabel),
+      unitType: normalizeNullableString(input.unitType),
+      condition: normalizeNullableString(input.condition),
       notes: normalizeNullableString(input.notes)
     }
   });
@@ -731,6 +1086,44 @@ export async function getAssignmentDetail(assignmentId: string): Promise<Assignm
     return null;
   }
 
+  const receivableEntries = await db.receivableEntry.findMany({
+    where: {
+      assignmentId: assignment.id,
+      organizationId: organization.id
+    },
+    include: {
+      customer: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      assignment: {
+        select: {
+          id: true
+        }
+      },
+      asset: {
+        select: {
+          id: true,
+          assetCode: true,
+          name: true
+        }
+      }
+    }
+  });
+  const serializedEntries = sortReceivableEntries(
+    receivableEntries.map((entry) => ({
+      ...serializeReceivableEntry(entry),
+      customerName: entry.customer.name,
+      customerHref: getCustomerRoute(entry.customer.id),
+      assignmentHref: entry.assignment ? getAssignmentRoute(entry.assignment.id) : undefined,
+      assetCode: entry.asset?.assetCode,
+      assetName: entry.asset?.name,
+      assetHref: entry.asset ? getAssetRoute(entry.asset.id) : undefined
+    }))
+  );
+
   return {
     assignment: {
       ...serializeAssignment(assignment),
@@ -742,7 +1135,9 @@ export async function getAssignmentDetail(assignmentId: string): Promise<Assignm
       assetHref: getAssetRoute(assignment.asset.id)
     },
     customer: serializeCustomer(assignment.customer),
-    asset: serializeAsset(assignment.asset)
+    asset: serializeAsset(assignment.asset),
+    receivableEntries: serializedEntries,
+    balanceInCents: summarizeReceivableEntries(serializedEntries, getTodayIsoDate()).balanceInCents
   };
 }
 
@@ -804,7 +1199,7 @@ export async function createAssignment(input: CreateAssignmentRequest): Promise<
   const organization = await getDefaultOrganization();
 
   if (input.organizationId !== organization.id) {
-    throw new Error("Assignments must be created inside the default organization.");
+    throw new Error("Rentals must be created inside the default organization.");
   }
 
   try {
@@ -830,7 +1225,7 @@ export async function createAssignment(input: CreateAssignmentRequest): Promise<
         }
 
         if (!asset) {
-          throw new Error("Asset not found in the default organization.");
+          throw new Error("Unit not found in the default organization.");
         }
 
         if (input.status === "active") {
@@ -842,7 +1237,7 @@ export async function createAssignment(input: CreateAssignmentRequest): Promise<
           );
 
           if (existingActiveAssignment) {
-            throw new Error("That asset already has an active assignment.");
+            throw new Error("That unit already has an active rental.");
           }
         }
 
@@ -856,6 +1251,17 @@ export async function createAssignment(input: CreateAssignmentRequest): Promise<
             billingCadence: domainCadenceToPrisma(input.billingCadence),
             rateInCents: input.rateInCents,
             status: domainAssignmentStatusToPrisma(input.status),
+            siteName: normalizeNullableString(input.siteName),
+            siteStreet1: normalizeNullableString(input.siteStreet1),
+            siteStreet2: normalizeNullableString(input.siteStreet2),
+            siteCity: normalizeNullableString(input.siteCity),
+            siteState: normalizeNullableString(input.siteState),
+            sitePostalCode: normalizeNullableString(input.sitePostalCode),
+            deliveryScheduledFor: input.deliveryScheduledFor ? parseDateOnly(input.deliveryScheduledFor) : null,
+            deliveredOn: input.deliveredOn ? parseDateOnly(input.deliveredOn) : null,
+            pickupRequestedOn: input.pickupRequestedOn ? parseDateOnly(input.pickupRequestedOn) : null,
+            pickedUpOn: input.pickedUpOn ? parseDateOnly(input.pickedUpOn) : null,
+            placementNotes: normalizeNullableString(input.placementNotes),
             notes: normalizeNullableString(input.notes)
           }
         });
@@ -881,7 +1287,7 @@ export async function createAssignment(input: CreateAssignmentRequest): Promise<
     return serializeAssignment(assignment);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw new Error("That asset already has an active assignment.");
+      throw new Error("That unit already has an active rental.");
     }
 
     throw error;
@@ -894,7 +1300,7 @@ export async function transitionAssignmentStatus(
   const organization = await getDefaultOrganization();
 
   if (input.organizationId !== organization.id) {
-    throw new Error("Assignments must be updated inside the default organization.");
+    throw new Error("Rentals must be updated inside the default organization.");
   }
 
   try {
@@ -911,7 +1317,7 @@ export async function transitionAssignmentStatus(
         });
 
         if (!assignment) {
-          throw new Error("Assignment not found in the default organization.");
+          throw new Error("Rental not found in the default organization.");
         }
 
         const currentStatus = prismaStatusToAssignmentStatus(assignment.status);
@@ -930,7 +1336,7 @@ export async function transitionAssignmentStatus(
           );
 
           if (existingActiveAssignment) {
-            throw new Error("That asset already has an active assignment.");
+            throw new Error("That unit already has an active rental.");
           }
         }
 
@@ -997,9 +1403,319 @@ export async function transitionAssignmentStatus(
     );
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw new Error("That asset already has an active assignment.");
+      throw new Error("That unit already has an active rental.");
     }
 
     throw error;
   }
+}
+
+export async function listReceivableEntries(): Promise<ReceivableListItem[]> {
+  const organization = await getDefaultOrganization();
+
+  const entries = await db.receivableEntry.findMany({
+    where: {
+      organizationId: organization.id
+    },
+    include: {
+      customer: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      assignment: {
+        select: {
+          id: true
+        }
+      },
+      asset: {
+        select: {
+          id: true,
+          assetCode: true,
+          name: true
+        }
+      }
+    }
+  });
+
+  return sortReceivableEntries(
+    entries.map((entry) => ({
+      ...serializeReceivableEntry(entry),
+      customerName: entry.customer.name,
+      customerHref: getCustomerRoute(entry.customer.id),
+      assignmentHref: entry.assignment ? getAssignmentRoute(entry.assignment.id) : undefined,
+      assetCode: entry.asset?.assetCode,
+      assetName: entry.asset?.name,
+      assetHref: entry.asset ? getAssetRoute(entry.asset.id) : undefined
+    }))
+  );
+}
+
+export async function getReceivableFormOptions(): Promise<{
+  organization: Organization;
+  customers: ReceivableCustomerOption[];
+  assignments: ReceivableAssignmentOption[];
+}> {
+  const organization = await getDefaultOrganization();
+
+  const [customers, assignments] = await Promise.all([
+    db.customer.findMany({
+      where: {
+        organizationId: organization.id,
+        status: {
+          not: "ARCHIVED"
+        }
+      },
+      orderBy: {
+        name: "asc"
+      }
+    }),
+    db.assignment.findMany({
+      where: {
+        organizationId: organization.id,
+        status: {
+          in: ["ACTIVE", "DRAFT"]
+        }
+      },
+      include: {
+        customer: {
+          select: {
+            name: true
+          }
+        },
+        asset: {
+          select: {
+            assetCode: true,
+            name: true
+          }
+        }
+      },
+      orderBy: {
+        startDate: "desc"
+      }
+    })
+  ]);
+
+  return {
+    organization,
+    customers: customers.map((customer) => ({
+      id: customer.id,
+      label: customer.companyName ? `${customer.name} · ${customer.companyName}` : customer.name
+    })),
+    assignments: assignments.map((assignment) => ({
+      id: assignment.id,
+      customerId: assignment.customerId,
+      assetId: assignment.assetId,
+      label: `${assignment.asset.assetCode} · ${assignment.customer.name} · ${dateToIsoDate(assignment.startDate)}`
+    }))
+  };
+}
+
+export async function createReceivableEntry(input: CreateReceivableEntryRequest): Promise<ReceivableEntry> {
+  const organization = await getDefaultOrganization();
+
+  if (input.organizationId !== organization.id) {
+    throw new Error("Receivable entries must be created inside the default organization.");
+  }
+
+  const entry = await db.$transaction(async (transaction) => {
+    const customer = await transaction.customer.findFirst({
+      where: {
+        id: input.customerId,
+        organizationId: organization.id
+      }
+    });
+
+    if (!customer) {
+      throw new Error("Customer not found in the default organization.");
+    }
+
+    let assignmentAssetId = input.assetId;
+
+    if (input.assignmentId) {
+      const assignment = await transaction.assignment.findFirst({
+        where: {
+          id: input.assignmentId,
+          organizationId: organization.id
+        }
+      });
+
+      if (!assignment) {
+        throw new Error("Rental not found in the default organization.");
+      }
+
+      if (assignment.customerId !== input.customerId) {
+        throw new Error("The selected rental belongs to a different customer.");
+      }
+
+      assignmentAssetId = assignment.assetId;
+    }
+
+    if (assignmentAssetId) {
+      const asset = await transaction.asset.findFirst({
+        where: {
+          id: assignmentAssetId,
+          organizationId: organization.id
+        }
+      });
+
+      if (!asset) {
+        throw new Error("Unit not found in the default organization.");
+      }
+    }
+
+    return transaction.receivableEntry.create({
+      data: {
+        organizationId: organization.id,
+        customerId: input.customerId,
+        assignmentId: normalizeNullableString(input.assignmentId),
+        assetId: normalizeNullableString(assignmentAssetId),
+        type: domainReceivableTypeToPrisma(input.type),
+        description: input.description,
+        effectiveDate: parseDateOnly(input.effectiveDate),
+        dueDate: input.dueDate ? parseDateOnly(input.dueDate) : null,
+        amountInCents: normalizeReceivableAmount(input.type, input.amountInCents),
+        paymentMethod: normalizeNullableString(input.paymentMethod),
+        reference: normalizeNullableString(input.reference),
+        notes: normalizeNullableString(input.notes)
+      }
+    });
+  });
+
+  return serializeReceivableEntry(entry);
+}
+
+export async function listDocumentTemplates(): Promise<DocumentTemplate[]> {
+  const organization = await getDefaultOrganization();
+
+  const templates = await db.documentTemplate.findMany({
+    where: {
+      organizationId: organization.id
+    },
+    orderBy: [
+      {
+        active: "desc"
+      },
+      {
+        type: "asc"
+      },
+      {
+        name: "asc"
+      }
+    ]
+  });
+
+  return templates.map(serializeDocumentTemplate);
+}
+
+export async function createDocumentTemplate(input: CreateDocumentTemplateRequest): Promise<DocumentTemplate> {
+  const organization = await getDefaultOrganization();
+
+  if (input.organizationId !== organization.id) {
+    throw new Error("Document templates must be created inside the default organization.");
+  }
+
+  const template = await db.documentTemplate.create({
+    data: {
+      organizationId: organization.id,
+      type: domainDocumentTemplateTypeToPrisma(input.type),
+      name: input.name,
+      subject: normalizeNullableString(input.subject),
+      body: input.body,
+      mergeFields: input.mergeFields,
+      printEnabled: input.printEnabled,
+      emailEnabled: input.emailEnabled,
+      active: true
+    }
+  });
+
+  return serializeDocumentTemplate(template);
+}
+
+export async function getReportsSnapshot(): Promise<{
+  organization: Organization;
+  unitCounts: Array<{ label: string; count: number }>;
+  rentalCounts: Array<{ label: string; count: number }>;
+  balances: CustomerBalanceSummary[];
+  monthlyPaymentsInCents: number;
+  openBalanceInCents: number;
+  pastDueInCents: number;
+}> {
+  const organization = await getDefaultOrganization();
+  const today = getTodayIsoDate();
+  const monthStart = today.slice(0, 8) + "01";
+
+  const [assets, assignments, customers] = await Promise.all([
+    db.asset.findMany({
+      where: {
+        organizationId: organization.id
+      }
+    }),
+    db.assignment.findMany({
+      where: {
+        organizationId: organization.id
+      }
+    }),
+    db.customer.findMany({
+      where: {
+        organizationId: organization.id
+      },
+      include: {
+        receivableEntries: {
+          where: {
+            status: "POSTED"
+          }
+        }
+      },
+      orderBy: {
+        name: "asc"
+      }
+    })
+  ]);
+
+  const unitStatusCounts = new Map<AssetStatus, number>();
+  for (const asset of assets) {
+    const status = prismaStatusToAssetStatus(asset.status);
+    unitStatusCounts.set(status, (unitStatusCounts.get(status) ?? 0) + 1);
+  }
+
+  const rentalStatusCounts = new Map<Assignment["status"], number>();
+  for (const assignment of assignments) {
+    const status = prismaStatusToAssignmentStatus(assignment.status);
+    rentalStatusCounts.set(status, (rentalStatusCounts.get(status) ?? 0) + 1);
+  }
+
+  const balances = customers
+    .map((customer) => ({
+      customerId: customer.id,
+      customerName: customer.name,
+      ...summarizeReceivableEntries(customer.receivableEntries.map(serializeReceivableEntry), today)
+    }))
+    .sort((left, right) => right.balanceInCents - left.balanceInCents || left.customerName.localeCompare(right.customerName));
+  const monthlyPaymentsInCents = balances.reduce((total, balance) => {
+    const customer = customers.find((record) => record.id === balance.customerId);
+
+    if (!customer) {
+      return total;
+    }
+
+    return (
+      total +
+      customer.receivableEntries
+        .map(serializeReceivableEntry)
+        .filter((entry) => entry.amountInCents < 0 && entry.effectiveDate >= monthStart)
+        .reduce((entryTotal, entry) => entryTotal + Math.abs(entry.amountInCents), 0)
+    );
+  }, 0);
+
+  return {
+    organization,
+    unitCounts: Array.from(unitStatusCounts.entries()).map(([label, count]) => ({ label, count })),
+    rentalCounts: Array.from(rentalStatusCounts.entries()).map(([label, count]) => ({ label, count })),
+    balances,
+    monthlyPaymentsInCents,
+    openBalanceInCents: balances.reduce((total, balance) => total + balance.balanceInCents, 0),
+    pastDueInCents: balances.reduce((total, balance) => total + balance.pastDueInCents, 0)
+  };
 }

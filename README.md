@@ -1,6 +1,6 @@
 # tenra Registry
 
-tenra Registry is a stable operational source of truth around organizations, customers, assets, assignments, and later invoicing.
+tenra Registry is a stable operating desk for portable storage-container rentals. It tracks organizations, customers, container units, rental site logistics, receivable entries, document templates, and practical reports.
 
 This repository is now past the pure scaffold stage. The web app is a real full-stack vertical slice backed by Postgres and Prisma. The desktop app is a local macOS launcher for that real web workflow. Mobile remains a light placeholder so the repo structure stays standardized without pretending that surface is production-ready yet.
 
@@ -8,18 +8,22 @@ This repository is now past the pure scaffold stage. The web app is a real full-
 
 - single-organization operational workflow in the web app
 - seeded default organization
-- customer list, create, and detail flow
-- asset list, create, and detail flow
-- assignment list, create, and detail flow
-- assignment lifecycle actions for activate, complete, and cancel
-- active-assignment protection at the application layer and database layer
-- automatic asset release back to available when active assignments are completed or cancelled
+- customer list, create, detail, rental history, and account-balance flow
+- container unit list, create, and detail flow with size, type, condition, home yard, and current location fields
+- rental list, create, and detail flow with customer site, delivery, pickup, placement, cadence, and rate fields
+- rental lifecycle actions for activate, complete, and cancel
+- active-rental protection at the application layer and database layer
+- automatic unit release back to available when active rentals are completed or cancelled
+- receivable ledger entries for charges, deposits, payments, credits, adjustments, and refunds
+- customer balance summaries, past-due visibility, and receivables reporting
+- customizable document template library for rental agreements, delivery/pickup tickets, condition reports, receipts, statements, notices, and letters
+- print-oriented CSS baseline for document/report output
 - macOS Applications launcher that starts the production Next app locally and opens the Postgres-backed dashboard in a desktop window
 
 The target flow for this pass is real:
 
 ```bash
-available asset -> create active assignment -> complete or cancel assignment -> asset available again -> create a new active assignment
+available container -> create active rental -> post charges/payments -> complete or cancel rental -> unit available again
 ```
 
 ## Monorepo Layout
@@ -57,9 +61,10 @@ pnpm doctor
 ## Notes
 
 - The UI is intentionally single-organization for this pass, but the schema remains organization-aware.
-- Billing is intentionally simple: assignment cadence plus USD integer cents.
-- Asset lifecycle automation only moves assets between `available` and `assigned`. `maintenance` and `archived` remain manual states.
-- Invoice generation, auth provider integration, reporting, and a separate backend service are intentionally deferred.
+- Billing now uses a receivable ledger. Positive entries increase customer balance; payments and credits reduce it.
+- Unit lifecycle automation only moves units between `available` and `assigned`. `maintenance` and `archived` remain manual states.
+- Documents are currently templates, not generated/sent document records. PDF generation, email delivery, and immutable delivery history are still future work.
+- Auth provider integration and a separate backend service are intentionally deferred.
 - The desktop app is a local launcher, not a standalone distributable yet. Distribution should later bundle or provision the server/database path instead of depending on this repo checkout.
 
 See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) and [docs/REPO_MAP.md](docs/REPO_MAP.md) for the working details.

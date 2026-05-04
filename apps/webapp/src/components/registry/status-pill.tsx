@@ -12,7 +12,12 @@ const toneMap: Record<string, "neutral" | "success" | "warning" | "muted"> = {
   cancelled: "muted",
   completed: "neutral",
   draft: "neutral",
-  inactive: "muted"
+  inactive: "muted",
+  posted: "success",
+  void: "muted",
+  overdue: "warning",
+  current: "success",
+  warning: "warning"
 };
 
 function formatStatusLabel(status: string): string {

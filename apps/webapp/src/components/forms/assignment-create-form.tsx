@@ -51,13 +51,13 @@ export function AssignmentCreateForm({ assets, customers }: AssignmentCreateForm
     <article className="panel-card">
       <div className="section-heading section-heading--compact">
         <div>
-          <p className="eyebrow">Create Assignment</p>
-          <h2>Link a customer to an asset</h2>
+          <p className="eyebrow">Create Rental</p>
+          <h2>Rent a container to a customer</h2>
         </div>
       </div>
 
       <form action={formAction} className="form-stack" ref={formRef}>
-        <p className="table-subcopy">Activating an assignment requires the selected asset to be currently available.</p>
+        <p className="table-subcopy">Activating a rental requires the selected container to be currently available.</p>
 
         <div className="field-grid">
           <label className="form-field">
@@ -74,9 +74,9 @@ export function AssignmentCreateForm({ assets, customers }: AssignmentCreateForm
           </label>
 
           <label className="form-field">
-            <span>Asset</span>
+            <span>Container unit</span>
             <select className="form-select" name="assetId" required>
-              <option value="">Select an asset</option>
+              <option value="">Select a unit</option>
               {assets.map((asset) => (
                 <option key={asset.id} value={asset.id}>
                   {getAssetOptionLabel(asset)}
@@ -101,7 +101,7 @@ export function AssignmentCreateForm({ assets, customers }: AssignmentCreateForm
           </label>
 
           <label className="form-field">
-            <span>Status</span>
+            <span>Rental status</span>
             <select className="form-select" defaultValue="active" name="status">
               {assignmentStatuses.map((status) => (
                 <option key={status} value={status}>
@@ -133,8 +133,62 @@ export function AssignmentCreateForm({ assets, customers }: AssignmentCreateForm
           </label>
         </div>
 
+        <div className="field-grid">
+          <label className="form-field">
+            <span>Customer site name</span>
+            <input className="form-input" name="siteName" placeholder="Main job site" type="text" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "siteName")}</small>
+          </label>
+
+          <label className="form-field">
+            <span>Delivery scheduled</span>
+            <input className="form-input" name="deliveryScheduledFor" type="date" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "deliveryScheduledFor")}</small>
+          </label>
+        </div>
+
+        <div className="field-grid">
+          <label className="form-field">
+            <span>Site street 1</span>
+            <input className="form-input" name="siteStreet1" type="text" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "siteStreet1")}</small>
+          </label>
+
+          <label className="form-field">
+            <span>Site street 2</span>
+            <input className="form-input" name="siteStreet2" type="text" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "siteStreet2")}</small>
+          </label>
+        </div>
+
+        <div className="field-grid field-grid--thirds">
+          <label className="form-field">
+            <span>Site city</span>
+            <input className="form-input" name="siteCity" type="text" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "siteCity")}</small>
+          </label>
+
+          <label className="form-field">
+            <span>Site state</span>
+            <input className="form-input" name="siteState" type="text" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "siteState")}</small>
+          </label>
+
+          <label className="form-field">
+            <span>Site postal code</span>
+            <input className="form-input" name="sitePostalCode" type="text" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "sitePostalCode")}</small>
+          </label>
+        </div>
+
         <label className="form-field">
-          <span>Notes</span>
+          <span>Placement notes</span>
+          <textarea className="form-textarea" name="placementNotes" placeholder="Gate code, drop location, access notes" rows={3} />
+          <small className="field-error">{getFieldError(state.fieldErrors, "placementNotes")}</small>
+        </label>
+
+        <label className="form-field">
+          <span>Internal notes</span>
           <textarea className="form-textarea" name="notes" rows={4} />
           <small className="field-error">{getFieldError(state.fieldErrors, "notes")}</small>
         </label>
@@ -147,7 +201,7 @@ export function AssignmentCreateForm({ assets, customers }: AssignmentCreateForm
               </p>
             ) : null}
           </div>
-          <FormSubmitButton idleLabel="Create assignment" pendingLabel="Creating..." />
+          <FormSubmitButton idleLabel="Create rental" pendingLabel="Creating..." />
         </div>
       </form>
     </article>

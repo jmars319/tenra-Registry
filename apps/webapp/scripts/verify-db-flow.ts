@@ -7,7 +7,9 @@ const {
   createAssignment,
   createAsset,
   createCustomer,
+  createReceivableEntry,
   getDefaultOrganization,
+  getCustomerDetail,
   transitionAssignmentStatus
 } = await import("../src/server/registry-data");
 
@@ -65,8 +67,12 @@ try {
   const asset = await createAsset({
     organizationId: organization.id,
     assetCode: `VERIFY-${suffix}`,
-    name: `Verification Asset ${suffix}`,
-    category: "unit"
+    name: `Verification Container ${suffix}`,
+    category: "unit",
+    sizeLabel: "20 ft",
+    unitType: "standard",
+    condition: "rent-ready",
+    currentLocation: "Verification yard"
   });
 
   assetId = asset.id;
@@ -78,8 +84,44 @@ try {
     startDate,
     billingCadence: "monthly",
     rateInCents: 250000,
-    status: "active"
+    status: "active",
+    siteName: "Verification site",
+    siteStreet1: "100 Test Lane",
+    siteCity: "Savannah",
+    siteState: "GA",
+    sitePostalCode: "31401",
+    deliveryScheduledFor: startDate,
+    placementNotes: "Drop doors facing the driveway."
   });
+
+  await createReceivableEntry({
+    organizationId: organization.id,
+    customerId: customer.id,
+    assignmentId: assignmentOne.id,
+    type: "charge",
+    description: "Verification rental charge",
+    effectiveDate: startDate,
+    dueDate: startDate,
+    amountInCents: 250000
+  });
+
+  await createReceivableEntry({
+    organizationId: organization.id,
+    customerId: customer.id,
+    assignmentId: assignmentOne.id,
+    type: "payment",
+    description: "Verification payment",
+    effectiveDate: startDate,
+    amountInCents: 100000,
+    paymentMethod: "test"
+  });
+
+  const customerDetail = await getCustomerDetail(customer.id);
+  assertCondition(customerDetail, "Customer detail should load after receivable entries are created.");
+  assertCondition(
+    customerDetail.balance.balanceInCents === 150000,
+    "Customer balance should reflect charges minus payments."
+  );
 
   assertCondition((await readAssetStatus(asset.id)) === "ASSIGNED", "Asset should be assigned after activation.");
 
@@ -195,6 +237,14 @@ try {
 
   console.log("tenra Registry DB lifecycle flow passed.");
 } finally {
+  if (customerId) {
+    await db.receivableEntry.deleteMany({
+      where: {
+        customerId
+      }
+    });
+  }
+
   if (assetId) {
     await db.assignment.deleteMany({
       where: {

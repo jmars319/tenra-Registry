@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { CustomerCreateForm } from "../../src/components/forms/customer-create-form";
-import { formatBillingAddressLines } from "../../src/components/registry/formatters";
+import {
+  formatBalanceLabel,
+  formatBillingAddressLines
+} from "../../src/components/registry/formatters";
 import { StatusPill } from "../../src/components/registry/status-pill";
 import { getDefaultOrganization, listCustomers } from "../../src/server/registry-data";
 
@@ -13,10 +16,10 @@ export default async function CustomersPage() {
     <section className="stack">
       <div className="hero-card hero-card--compact">
         <p className="eyebrow">Customers</p>
-        <h1>Customer registry</h1>
+        <h1>Customer accounts</h1>
         <p className="hero-card__summary">
-          Single-organization view for {organization.name}. Create customers, capture billing details, and inspect their
-          assignment history.
+          Single-organization view for {organization.name}. Create customers, capture billing details, inspect rental
+          history, and see current balance state.
         </p>
       </div>
 
@@ -26,8 +29,8 @@ export default async function CustomersPage() {
           <article className="panel-card panel-card--soft">
             <h2>Current rule</h2>
             <p>
-              The UI is single-organization for this pass, but every customer record remains organization-aware in the
-              schema and shared contracts.
+              Customers may be individuals or businesses. Billing address, contact details, rentals, payments, credits,
+              and documents all hang from this account.
             </p>
           </article>
         </div>
@@ -55,7 +58,8 @@ export default async function CustomersPage() {
                     <th>Contact</th>
                     <th>Billing</th>
                     <th>Status</th>
-                    <th>Active assignments</th>
+                    <th>Rentals</th>
+                    <th>Balance</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -88,7 +92,11 @@ export default async function CustomersPage() {
                         <td>
                           <StatusPill status={customer.status} />
                         </td>
-                        <td>{customer.activeAssignmentCount}</td>
+                        <td>{customer.activeAssignmentCount} active</td>
+                        <td>
+                          <div>{formatBalanceLabel(customer.balanceInCents)}</div>
+                          <div className="table-subcopy">{formatBalanceLabel(customer.pastDueInCents)} past due</div>
+                        </td>
                       </tr>
                     );
                   })}

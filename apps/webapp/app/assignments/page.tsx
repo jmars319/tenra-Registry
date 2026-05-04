@@ -19,10 +19,10 @@ export default async function AssignmentsPage() {
     <section className="stack">
       <div className="hero-card hero-card--compact">
         <p className="eyebrow">Assignments</p>
-        <h1>Active and planned assignments</h1>
+        <h1>Active and planned rentals</h1>
         <p className="hero-card__summary">
-          Generalized customer-to-asset links for {organization.name}. This is the first live workflow replacing the
-          legacy rental-style allocation process.
+          Customer-to-container rentals for {organization.name}. Track who has each unit, where it was delivered,
+          billing cadence, and pickup state.
         </p>
       </div>
 
@@ -32,8 +32,8 @@ export default async function AssignmentsPage() {
           <article className="panel-card panel-card--soft">
             <h2>Occupancy rule</h2>
             <p>
-              Only active assignments occupy an asset. Completing or cancelling an active assignment releases that asset
-              back to available unless it has been manually moved into maintenance or archived.
+              Only active rentals occupy a unit. Completing or cancelling an active rental releases that unit back to
+              available unless it has been manually moved into maintenance or archived.
             </p>
           </article>
         </div>
@@ -42,24 +42,25 @@ export default async function AssignmentsPage() {
           <div className="section-heading">
             <div>
               <p className="eyebrow">List View</p>
-              <h2>Assignments</h2>
+              <h2>Rentals</h2>
             </div>
             <span className="pill">{activeAssignmentCount} active</span>
           </div>
 
           {assignments.length === 0 ? (
             <div className="empty-state">
-              <h3>No assignments yet</h3>
-              <p>Create an assignment to connect a customer to an asset and occupy it operationally.</p>
+              <h3>No rentals yet</h3>
+              <p>Create a rental to connect a customer to a container and occupy it operationally.</p>
             </div>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Assignment</th>
+                    <th>Rental</th>
                     <th>Customer</th>
-                    <th>Asset</th>
+                    <th>Unit</th>
+                    <th>Site</th>
                     <th>Status</th>
                     <th>Billing</th>
                     <th>Dates</th>
@@ -70,7 +71,7 @@ export default async function AssignmentsPage() {
                     <tr key={assignment.id}>
                       <td>
                         <Link className="table-link" href={assignment.href}>
-                          View assignment
+                          View rental
                         </Link>
                         <div className="table-subcopy">{assignment.notes ?? "Open the detail view to manage lifecycle."}</div>
                       </td>
@@ -84,6 +85,12 @@ export default async function AssignmentsPage() {
                           {assignment.assetCode}
                         </Link>
                         <div className="table-subcopy">{assignment.assetName}</div>
+                      </td>
+                      <td>
+                        <div>{assignment.siteName ?? "No site name"}</div>
+                        <div className="table-subcopy">
+                          {[assignment.siteCity, assignment.siteState].filter(Boolean).join(", ") || "No site city/state"}
+                        </div>
                       </td>
                       <td>
                         <StatusPill status={assignment.status} />

@@ -12,10 +12,10 @@ export default async function AssetsPage() {
     <section className="stack">
       <div className="hero-card hero-card--compact">
         <p className="eyebrow">Assets</p>
-        <h1>Asset registry</h1>
+        <h1>Container unit registry</h1>
         <p className="hero-card__summary">
-          Track generalized operational assets for {organization.name}, including current location and assignment-ready
-          availability.
+          Track portable storage containers for {organization.name}, including size, condition, yard home, current
+          location, and rental-ready availability.
         </p>
       </div>
 
@@ -25,8 +25,8 @@ export default async function AssetsPage() {
           <article className="panel-card panel-card--soft">
             <h2>Current rule</h2>
             <p>
-              Asset codes must be unique within the organization, and only active assignments occupy an asset for
-              scheduling purposes.
+              Unit codes must be unique within the organization. Only active rentals occupy a container for scheduling
+              and availability.
             </p>
           </article>
         </div>
@@ -35,26 +35,27 @@ export default async function AssetsPage() {
           <div className="section-heading">
             <div>
               <p className="eyebrow">List View</p>
-              <h2>Assets</h2>
+              <h2>Units</h2>
             </div>
             <span className="pill">{assets.length} total</span>
           </div>
 
           {assets.length === 0 ? (
             <div className="empty-state">
-              <h3>No assets yet</h3>
-              <p>Create the first asset to make assignment workflows possible.</p>
+              <h3>No units yet</h3>
+              <p>Create the first container unit to make rental workflows possible.</p>
             </div>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Asset</th>
-                    <th>Category</th>
+                    <th>Unit</th>
+                    <th>Size / Type</th>
+                    <th>Condition</th>
                     <th>Location</th>
                     <th>Status</th>
-                    <th>Current assignment</th>
+                    <th>Current rental</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -66,8 +67,15 @@ export default async function AssetsPage() {
                         </Link>
                         <div className="table-subcopy">{asset.name}</div>
                       </td>
-                      <td>{asset.category}</td>
-                      <td>{asset.currentLocation ?? <span className="table-subcopy">Not set</span>}</td>
+                      <td>
+                        <div>{asset.sizeLabel ?? asset.category}</div>
+                        <div className="table-subcopy">{asset.unitType ?? "No unit type"}</div>
+                      </td>
+                      <td>{asset.condition ?? <span className="table-subcopy">Not set</span>}</td>
+                      <td>
+                        <div>{asset.currentLocation ?? <span className="table-subcopy">Not set</span>}</div>
+                        <div className="table-subcopy">{asset.homeLocation ?? "No home yard"}</div>
+                      </td>
                       <td>
                         <StatusPill status={asset.status} />
                       </td>
@@ -75,10 +83,14 @@ export default async function AssetsPage() {
                         {asset.activeAssignment ? (
                           <div>
                             <div>{asset.activeAssignment.customerName}</div>
-                            <div className="table-subcopy">Assignment active</div>
+                            <div className="table-subcopy">
+                              {[asset.activeAssignment.siteName, asset.activeAssignment.siteCity, asset.activeAssignment.siteState]
+                                .filter(Boolean)
+                                .join(", ") || "Rental active"}
+                            </div>
                           </div>
                         ) : (
-                          <span className="table-subcopy">No active assignment</span>
+                          <span className="table-subcopy">No active rental</span>
                         )}
                       </td>
                     </tr>

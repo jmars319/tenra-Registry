@@ -37,6 +37,17 @@ export async function createAssignmentAction(
     billingCadence: getRequiredFormValue(formData, "billingCadence") as CreateAssignmentRequest["billingCadence"],
     rateInCents: getCurrencyCentsFromDollars(formData, "rateDollars"),
     status: getRequiredFormValue(formData, "status") as CreateAssignmentRequest["status"],
+    siteName: getOptionalFormValue(formData, "siteName"),
+    siteStreet1: getOptionalFormValue(formData, "siteStreet1"),
+    siteStreet2: getOptionalFormValue(formData, "siteStreet2"),
+    siteCity: getOptionalFormValue(formData, "siteCity"),
+    siteState: getOptionalFormValue(formData, "siteState"),
+    sitePostalCode: getOptionalFormValue(formData, "sitePostalCode"),
+    deliveryScheduledFor: getOptionalFormValue(formData, "deliveryScheduledFor"),
+    deliveredOn: getOptionalFormValue(formData, "deliveredOn"),
+    pickupRequestedOn: getOptionalFormValue(formData, "pickupRequestedOn"),
+    pickedUpOn: getOptionalFormValue(formData, "pickedUpOn"),
+    placementNotes: getOptionalFormValue(formData, "placementNotes"),
     notes: getOptionalFormValue(formData, "notes")
   };
 
@@ -45,7 +56,7 @@ export async function createAssignmentAction(
   if (!result.success) {
     return {
       status: "error",
-      message: "Assignment details need attention.",
+      message: "Rental details need attention.",
       fieldErrors: flattenFieldErrors(result.error.flatten().fieldErrors)
     };
   }
@@ -55,7 +66,7 @@ export async function createAssignmentAction(
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "Assignment could not be created."
+      message: error instanceof Error ? error.message : "Rental could not be created."
     };
   }
 
@@ -63,10 +74,12 @@ export async function createAssignmentAction(
   revalidatePath(registryWebRoutes.customers);
   revalidatePath(registryWebRoutes.assets);
   revalidatePath(registryWebRoutes.assignments);
+  revalidatePath(registryWebRoutes.receivables);
+  revalidatePath(registryWebRoutes.reports);
 
   return {
     status: "success",
-    message: "Assignment created."
+    message: "Rental created."
   };
 }
 
@@ -74,9 +87,9 @@ const transitionSuccessMessages: Record<
   TransitionAssignmentStatusRequest["nextStatus"],
   string
 > = {
-  active: "Assignment activated.",
-  completed: "Assignment completed.",
-  cancelled: "Assignment cancelled."
+  active: "Rental activated.",
+  completed: "Rental completed.",
+  cancelled: "Rental cancelled."
 };
 
 export async function transitionAssignmentStatusAction(
@@ -96,7 +109,7 @@ export async function transitionAssignmentStatusAction(
   if (!result.success) {
     return {
       status: "error",
-      message: "Assignment lifecycle details need attention.",
+      message: "Rental lifecycle details need attention.",
       fieldErrors: flattenFieldErrors(result.error.flatten().fieldErrors)
     };
   }
@@ -111,10 +124,11 @@ export async function transitionAssignmentStatusAction(
     revalidatePath(getAssetRoute(transitionResult.asset.id));
     revalidatePath(registryWebRoutes.assignments);
     revalidatePath(getAssignmentRoute(transitionResult.assignment.id));
+    revalidatePath(registryWebRoutes.reports);
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "Assignment status could not be updated."
+      message: error instanceof Error ? error.message : "Rental status could not be updated."
     };
   }
 

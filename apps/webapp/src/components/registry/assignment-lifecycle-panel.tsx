@@ -15,15 +15,15 @@ interface AssignmentLifecyclePanelProps {
 }
 
 const actionLabels: Record<AssignmentTransitionTarget, string> = {
-  active: "Activate assignment",
-  completed: "Complete assignment",
-  cancelled: "Cancel assignment"
+  active: "Activate rental",
+  completed: "Complete rental",
+  cancelled: "Cancel rental"
 };
 
 const actionDescriptions: Record<AssignmentTransitionTarget, string> = {
-  active: "Marks the assignment active and occupies the asset.",
-  completed: "Closes the active assignment and releases the asset when appropriate.",
-  cancelled: "Stops the assignment and releases the asset if it was active."
+  active: "Marks the rental active and occupies the container unit.",
+  completed: "Closes the active rental and releases the unit when appropriate.",
+  cancelled: "Stops the rental and releases the unit if it was active."
 };
 
 const actionButtonClasses: Record<AssignmentTransitionTarget, string> = {
@@ -37,11 +37,11 @@ function getActivationBlockedMessage(assetStatus: AssetStatus): string | null {
     case "available":
       return null;
     case "assigned":
-      return "Activation is blocked because the asset is already assigned.";
+      return "Activation is blocked because the unit is already rented.";
     case "maintenance":
-      return "Activation is blocked because the asset is in maintenance.";
+      return "Activation is blocked because the unit is in maintenance.";
     case "archived":
-      return "Activation is blocked because the asset is archived.";
+      return "Activation is blocked because the unit is archived.";
     default:
       return "Activation is currently blocked for this asset.";
   }
@@ -89,14 +89,14 @@ export function AssignmentLifecyclePanel({
       <div className="section-heading">
         <div>
           <p className="eyebrow">Lifecycle</p>
-          <h2>Assignment actions</h2>
+          <h2>Rental actions</h2>
         </div>
       </div>
 
       {availableActions.length === 0 ? (
         <div className="empty-state empty-state--compact">
           <h3>No actions available</h3>
-          <p>This assignment is closed and cannot be changed further in the current workflow.</p>
+          <p>This rental is closed and cannot be changed further in the current workflow.</p>
         </div>
       ) : (
         <form action={formAction} className="form-stack">

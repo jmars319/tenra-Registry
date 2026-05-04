@@ -55,6 +55,8 @@ export async function createCustomerAction(
   revalidatePath(registryWebRoutes.dashboard);
   revalidatePath(registryWebRoutes.customers);
   revalidatePath(registryWebRoutes.assignments);
+  revalidatePath(registryWebRoutes.receivables);
+  revalidatePath(registryWebRoutes.reports);
 
   return {
     status: "success",

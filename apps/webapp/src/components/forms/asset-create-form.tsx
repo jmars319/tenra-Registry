@@ -24,8 +24,8 @@ export function AssetCreateForm() {
     <article className="panel-card">
       <div className="section-heading section-heading--compact">
         <div>
-          <p className="eyebrow">Create Asset</p>
-          <h2>New tracked asset</h2>
+          <p className="eyebrow">Create Unit</p>
+          <h2>New container unit</h2>
         </div>
       </div>
 
@@ -39,7 +39,7 @@ export function AssetCreateForm() {
 
           <label className="form-field">
             <span>Name</span>
-            <input className="form-input" name="name" placeholder="Container 3001" required type="text" />
+            <input className="form-input" name="name" placeholder="20 ft storage container" required type="text" />
             <small className="field-error">{getFieldError(state.fieldErrors, "name")}</small>
           </label>
         </div>
@@ -59,10 +59,36 @@ export function AssetCreateForm() {
 
           <label className="form-field">
             <span>Current location</span>
-            <input className="form-input" name="currentLocation" placeholder="Yard A" type="text" />
+            <input className="form-input" name="currentLocation" placeholder="Yard A or customer site" type="text" />
             <small className="field-error">{getFieldError(state.fieldErrors, "currentLocation")}</small>
           </label>
         </div>
+
+        <div className="field-grid field-grid--thirds">
+          <label className="form-field">
+            <span>Size</span>
+            <input className="form-input" name="sizeLabel" placeholder="20 ft" type="text" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "sizeLabel")}</small>
+          </label>
+
+          <label className="form-field">
+            <span>Unit type</span>
+            <input className="form-input" name="unitType" placeholder="standard, high cube" type="text" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "unitType")}</small>
+          </label>
+
+          <label className="form-field">
+            <span>Condition</span>
+            <input className="form-input" name="condition" placeholder="rent-ready" type="text" />
+            <small className="field-error">{getFieldError(state.fieldErrors, "condition")}</small>
+          </label>
+        </div>
+
+        <label className="form-field">
+          <span>Home yard location</span>
+          <input className="form-input" name="homeLocation" placeholder="North yard row 2" type="text" />
+          <small className="field-error">{getFieldError(state.fieldErrors, "homeLocation")}</small>
+        </label>
 
         <label className="form-field">
           <span>Notes</span>
@@ -78,7 +104,7 @@ export function AssetCreateForm() {
               </p>
             ) : null}
           </div>
-          <FormSubmitButton idleLabel="Create asset" pendingLabel="Creating..." />
+          <FormSubmitButton idleLabel="Create unit" pendingLabel="Creating..." />
         </div>
       </form>
     </article>

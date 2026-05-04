@@ -11,6 +11,10 @@ export const registryCapabilities = [
   "assets:write",
   "assignments:read",
   "assignments:write",
+  "receivables:read",
+  "receivables:write",
+  "documents:read",
+  "documents:write",
   "invoices:read",
   "invoices:write",
   "reports:read",
@@ -42,6 +46,10 @@ const capabilityMap: Record<RegistryRole, readonly RegistryCapability[]> = {
     "assets:write",
     "assignments:read",
     "assignments:write",
+    "receivables:read",
+    "receivables:write",
+    "documents:read",
+    "documents:write",
     "invoices:read",
     "invoices:write",
     "reports:read",
@@ -53,9 +61,12 @@ const capabilityMap: Record<RegistryRole, readonly RegistryCapability[]> = {
     "assets:write",
     "assignments:read",
     "assignments:write",
+    "receivables:read",
+    "receivables:write",
+    "documents:read",
     "invoices:read"
   ],
-  viewer: ["customers:read", "assets:read", "assignments:read", "invoices:read", "reports:read"]
+  viewer: ["customers:read", "assets:read", "assignments:read", "receivables:read", "documents:read", "invoices:read", "reports:read"]
 };
 
 export function canAccess(role: RegistryRole, capability: RegistryCapability): boolean {

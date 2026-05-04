@@ -77,20 +77,28 @@ async function main() {
       }
     },
     update: {
-      name: "Container 1001",
+      name: "20 ft storage container",
       category: "UNIT",
       status: "ASSIGNED",
-      currentLocation: "Yard A",
-      notes: "Seed asset with an active assignment."
+      currentLocation: "Harbor Logistics overflow lot",
+      homeLocation: "Main yard row A",
+      sizeLabel: "20 ft",
+      unitType: "standard steel container",
+      condition: "rent-ready",
+      notes: "Seed container with an active rental."
     },
     create: {
       organizationId: organization.id,
       assetCode: "CTR-1001",
-      name: "Container 1001",
+      name: "20 ft storage container",
       category: "UNIT",
       status: "ASSIGNED",
-      currentLocation: "Yard A",
-      notes: "Seed asset with an active assignment."
+      currentLocation: "Harbor Logistics overflow lot",
+      homeLocation: "Main yard row A",
+      sizeLabel: "20 ft",
+      unitType: "standard steel container",
+      condition: "rent-ready",
+      notes: "Seed container with an active rental."
     }
   });
 
@@ -98,28 +106,36 @@ async function main() {
     where: {
       organizationId_assetCode: {
         organizationId: organization.id,
-        assetCode: "TRL-2001"
+        assetCode: "CTR-1002"
       }
     },
     update: {
-      name: "Trailer 2001",
-      category: "VEHICLE",
+      name: "40 ft high cube container",
+      category: "UNIT",
       status: "AVAILABLE",
-      currentLocation: "Lot 3",
-      notes: "Seed asset kept available for assignment testing."
+      currentLocation: "Main yard",
+      homeLocation: "Main yard row B",
+      sizeLabel: "40 ft",
+      unitType: "high cube",
+      condition: "needs sweep-out",
+      notes: "Seed unit kept available for rental testing."
     },
     create: {
       organizationId: organization.id,
-      assetCode: "TRL-2001",
-      name: "Trailer 2001",
-      category: "VEHICLE",
+      assetCode: "CTR-1002",
+      name: "40 ft high cube container",
+      category: "UNIT",
       status: "AVAILABLE",
-      currentLocation: "Lot 3",
-      notes: "Seed asset kept available for assignment testing."
+      currentLocation: "Main yard",
+      homeLocation: "Main yard row B",
+      sizeLabel: "40 ft",
+      unitType: "high cube",
+      condition: "needs sweep-out",
+      notes: "Seed unit kept available for rental testing."
     }
   });
 
-  await prisma.assignment.upsert({
+  const activeRental = await prisma.assignment.upsert({
     where: {
       id: `seed-assignment-${organization.id}`
     },
@@ -132,7 +148,17 @@ async function main() {
       billingCadence: "MONTHLY",
       rateInCents: 185000,
       status: "ACTIVE",
-      notes: "Seed active assignment for the default organization."
+      siteName: "Harbor Logistics overflow lot",
+      siteStreet1: "500 Dockside Road",
+      siteCity: "Savannah",
+      siteState: "GA",
+      sitePostalCode: "31401",
+      deliveryScheduledFor: dateOnly("2026-03-01"),
+      deliveredOn: dateOnly("2026-03-01"),
+      pickupRequestedOn: null,
+      pickedUpOn: null,
+      placementNotes: "Place container along the east fence with doors facing the warehouse.",
+      notes: "Seed active rental for the default organization."
     },
     create: {
       id: `seed-assignment-${organization.id}`,
@@ -144,9 +170,154 @@ async function main() {
       billingCadence: "MONTHLY",
       rateInCents: 185000,
       status: "ACTIVE",
-      notes: "Seed active assignment for the default organization."
+      siteName: "Harbor Logistics overflow lot",
+      siteStreet1: "500 Dockside Road",
+      siteCity: "Savannah",
+      siteState: "GA",
+      sitePostalCode: "31401",
+      deliveryScheduledFor: dateOnly("2026-03-01"),
+      deliveredOn: dateOnly("2026-03-01"),
+      pickupRequestedOn: null,
+      pickedUpOn: null,
+      placementNotes: "Place container along the east fence with doors facing the warehouse.",
+      notes: "Seed active rental for the default organization."
     }
   });
+
+  await prisma.receivableEntry.upsert({
+    where: {
+      id: `seed-receivable-rent-${organization.id}`
+    },
+    update: {
+      organizationId: organization.id,
+      customerId: sampleCustomer.id,
+      assignmentId: activeRental.id,
+      assetId: activeAsset.id,
+      type: "CHARGE",
+      status: "POSTED",
+      description: "Monthly container rent",
+      effectiveDate: dateOnly("2026-04-01"),
+      dueDate: dateOnly("2026-04-10"),
+      amountInCents: 185000,
+      paymentMethod: null,
+      reference: "APR-RENT",
+      notes: "Seed rental charge."
+    },
+    create: {
+      id: `seed-receivable-rent-${organization.id}`,
+      organizationId: organization.id,
+      customerId: sampleCustomer.id,
+      assignmentId: activeRental.id,
+      assetId: activeAsset.id,
+      type: "CHARGE",
+      status: "POSTED",
+      description: "Monthly container rent",
+      effectiveDate: dateOnly("2026-04-01"),
+      dueDate: dateOnly("2026-04-10"),
+      amountInCents: 185000,
+      paymentMethod: null,
+      reference: "APR-RENT",
+      notes: "Seed rental charge."
+    }
+  });
+
+  await prisma.receivableEntry.upsert({
+    where: {
+      id: `seed-receivable-payment-${organization.id}`
+    },
+    update: {
+      organizationId: organization.id,
+      customerId: sampleCustomer.id,
+      assignmentId: activeRental.id,
+      assetId: activeAsset.id,
+      type: "PAYMENT",
+      status: "POSTED",
+      description: "Customer payment",
+      effectiveDate: dateOnly("2026-04-12"),
+      dueDate: null,
+      amountInCents: -100000,
+      paymentMethod: "check",
+      reference: "CHK-1042",
+      notes: "Partial payment seed entry."
+    },
+    create: {
+      id: `seed-receivable-payment-${organization.id}`,
+      organizationId: organization.id,
+      customerId: sampleCustomer.id,
+      assignmentId: activeRental.id,
+      assetId: activeAsset.id,
+      type: "PAYMENT",
+      status: "POSTED",
+      description: "Customer payment",
+      effectiveDate: dateOnly("2026-04-12"),
+      dueDate: null,
+      amountInCents: -100000,
+      paymentMethod: "check",
+      reference: "CHK-1042",
+      notes: "Partial payment seed entry."
+    }
+  });
+
+  const templates = [
+    {
+      id: `seed-template-rental-${organization.id}`,
+      type: "RENTAL_AGREEMENT",
+      name: "Standard container rental agreement",
+      subject: "Container rental agreement for {{customer.name}}",
+      body:
+        "Customer: {{customer.name}}\nUnit: {{unit.assetCode}}\nSite: {{rental.siteAddress}}\nRate: {{rental.rate}}\n\nBusiness-approved rental terms go here.",
+      mergeFields: ["customer.name", "unit.assetCode", "rental.siteAddress", "rental.rate"]
+    },
+    {
+      id: `seed-template-delivery-${organization.id}`,
+      type: "DELIVERY_TICKET",
+      name: "Container delivery ticket",
+      subject: "Delivery ticket for {{unit.assetCode}}",
+      body:
+        "Deliver {{unit.assetCode}} to {{rental.siteAddress}}.\nPlacement notes: {{rental.placementNotes}}\nDriver notes: ____________________",
+      mergeFields: ["unit.assetCode", "rental.siteAddress", "rental.placementNotes"]
+    },
+    {
+      id: `seed-template-receipt-${organization.id}`,
+      type: "PAYMENT_RECEIPT",
+      name: "Payment receipt",
+      subject: "Payment receipt from {{organization.name}}",
+      body:
+        "Received from {{customer.name}}: {{payment.amount}}\nReference: {{payment.reference}}\nRemaining balance: {{balance.amount}}",
+      mergeFields: ["customer.name", "payment.amount", "payment.reference", "balance.amount"]
+    }
+  ];
+
+  for (const template of templates) {
+    await prisma.documentTemplate.upsert({
+      where: {
+        id: template.id
+      },
+      update: {
+        organizationId: organization.id,
+        type: template.type,
+        name: template.name,
+        subject: template.subject,
+        body: template.body,
+        mergeFields: template.mergeFields,
+        printEnabled: true,
+        emailEnabled: true,
+        active: true
+      },
+      create: {
+        id: template.id,
+        organizationId: organization.id,
+        type: template.type,
+        name: template.name,
+        subject: template.subject,
+        body: template.body,
+        mergeFields: template.mergeFields,
+        printEnabled: true,
+        emailEnabled: true,
+        active: true
+      }
+    });
+  }
 }
 
 main()
