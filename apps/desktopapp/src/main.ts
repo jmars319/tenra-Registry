@@ -104,9 +104,34 @@ async function showStatus(title: string, body: string, details = "") {
 }
 
 function resolvePnpmCommand() {
+  const homeDir = process.env.HOME || app.getPath("home");
+  const packageManagerVersion = (() => {
+    try {
+      const packageJson = JSON.parse(fs.readFileSync(path.resolve(repoRoot, "package.json"), "utf8")) as {
+        packageManager?: string;
+      };
+      return packageJson.packageManager?.match(/^pnpm@(.+)$/)?.[1];
+    } catch (error) {
+      logDesktop("could not read package manager version", error);
+      return undefined;
+    }
+  })();
+
   const candidates = [
     process.env.PNPM_HOME ? path.join(process.env.PNPM_HOME, "pnpm") : "",
+    homeDir ? path.join(homeDir, "Library/pnpm/pnpm") : "",
+    homeDir ? path.join(homeDir, ".local/share/pnpm/pnpm") : "",
+    homeDir && packageManagerVersion
+      ? path.join(homeDir, ".cache/node/corepack/v1/pnpm", packageManagerVersion, "bin/pnpm")
+      : "",
+    homeDir && packageManagerVersion
+      ? path.join(homeDir, ".cache/node/corepack/v1/pnpm", packageManagerVersion, "bin/pnpm.cjs")
+      : "",
+    "/opt/homebrew/opt/node@22/bin/pnpm",
+    "/opt/homebrew/opt/node/bin/pnpm",
     "/opt/homebrew/bin/pnpm",
+    "/usr/local/opt/node@22/bin/pnpm",
+    "/usr/local/opt/node/bin/pnpm",
     "/usr/local/bin/pnpm",
     "/usr/bin/pnpm",
   ].filter(Boolean);
@@ -120,14 +145,20 @@ function resolvePnpmCommand() {
   return "pnpm";
 }
 
-function getLaunchEnv() {
+function getLaunchEnv(extraPaths: string[] = []) {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     NODE_ENV: "production",
     PATH: [
+      ...extraPaths,
       process.env.PATH,
       process.env.PNPM_HOME,
+      process.env.COREPACK_HOME,
+      "/opt/homebrew/opt/node@22/bin",
+      "/opt/homebrew/opt/node/bin",
       "/opt/homebrew/bin",
+      "/usr/local/opt/node@22/bin",
+      "/usr/local/opt/node/bin",
       "/usr/local/bin",
       "/usr/bin",
       "/bin",
@@ -231,7 +262,7 @@ async function startRegistryServer() {
     ["--filter", "@registry/webapp", "start", "--hostname", "127.0.0.1", "--port", String(port)],
     {
       cwd: repoRoot,
-      env: getLaunchEnv(),
+      env: getLaunchEnv(path.isAbsolute(pnpmCommand) ? [path.dirname(pnpmCommand)] : []),
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
@@ -241,6 +272,7 @@ async function startRegistryServer() {
   child.stderr?.on("data", appendServerLog);
 
   child.once("error", (error) => {
+    appendServerLog(error instanceof Error ? (error.stack ?? error.message) : String(error));
     logDesktop("server process failed", error);
   });
 
