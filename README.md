@@ -2,7 +2,7 @@
 
 tenra Registry is a stable operating desk for portable storage-container rentals. It tracks organizations, customers, container units, rental site logistics, receivable entries, document templates, and practical reports.
 
-This repository is now past the pure scaffold stage. The web app is a real full-stack vertical slice backed by Postgres and Prisma. The desktop app is a local macOS launcher for that real web workflow. Mobile remains a light placeholder so the repo structure stays standardized without pretending that surface is production-ready yet.
+This repository is now past the pure scaffold stage. The web app is a real full-stack vertical slice backed by Postgres and Prisma. The desktop app is a local macOS launcher for that real web workflow. Mobile remains a light placeholder while the production workflow stays focused on web and desktop.
 
 ## What Works Now
 
@@ -15,8 +15,12 @@ This repository is now past the pure scaffold stage. The web app is a real full-
 - active-rental protection at the application layer and database layer
 - automatic unit release back to available when active rentals are completed or cancelled
 - receivable ledger entries for charges, deposits, payments, credits, adjustments, and refunds
+- rent-run screen for reviewing active rentals and posting recurring rent charges while skipping already-posted rows
 - customer balance summaries, past-due visibility, and receivables reporting
 - customizable document template library for rental agreements, delivery/pickup tickets, condition reports, receipts, statements, notices, and letters
+- generated document records with print/email actions and status timestamps
+- account statement generation from posted charges, payments, credits, and balances
+- blank CSV import layouts for customers, container units, active rentals, and opening balances
 - print-oriented CSS baseline for document/report output
 - macOS Applications launcher that starts the production Next app locally and opens the Postgres-backed dashboard in a desktop window
 
@@ -63,7 +67,8 @@ pnpm doctor
 - The UI is intentionally single-organization for this pass, but the schema remains organization-aware.
 - Billing now uses a receivable ledger. Positive entries increase customer balance; payments and credits reduce it.
 - Unit lifecycle automation only moves units between `available` and `assigned`. `maintenance` and `archived` remain manual states.
-- Documents are currently templates, not generated/sent document records. PDF generation, email delivery, and immutable delivery history are still future work.
+- Documents now create generated records and track print/email actions. PDF generation, direct email sending, and immutable delivery history are still future work.
+- Import readiness currently means exact CSV layouts and blank header downloads. The write-side importer should come after a real source export is available for dry-run validation.
 - Auth provider integration and a separate backend service are intentionally deferred.
 - The desktop app is a local launcher, not a standalone distributable yet. Distribution should later bundle or provision the server/database path instead of depending on this repo checkout.
 

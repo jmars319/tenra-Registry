@@ -10,7 +10,9 @@ export const registryWebRoutes = {
   assets: "/assets",
   assignments: "/assignments",
   receivables: "/receivables",
+  rentRun: "/rent-run",
   documents: "/documents",
+  imports: "/imports",
   invoices: "/invoices",
   reports: "/reports",
   settings: "/settings"
@@ -54,10 +56,22 @@ export const registryModules = [
     href: registryWebRoutes.receivables
   },
   {
+    key: "rent-run",
+    title: "Rent Run",
+    description: "Review active rentals and post recurring rent charges in a controlled batch.",
+    href: registryWebRoutes.rentRun
+  },
+  {
     key: "documents",
     title: "Documents",
     description: "Customizable rental, delivery, pickup, receipt, statement, and notice templates.",
     href: registryWebRoutes.documents
+  },
+  {
+    key: "imports",
+    title: "Imports",
+    description: "Prepared CSV layouts for customers, units, rentals, and opening balances.",
+    href: registryWebRoutes.imports
   },
   {
     key: "reports",

@@ -1,5 +1,6 @@
 import { getDocumentTemplateTypeLabel } from "@registry/domain";
 import Link from "next/link";
+import { AccountStatementForm } from "../../src/components/forms/account-statement-form";
 import { DocumentTemplateForm } from "../../src/components/forms/document-template-form";
 import { GeneratedDocumentForm } from "../../src/components/forms/generated-document-form";
 import { formatDateLabel } from "../../src/components/registry/formatters";
@@ -48,11 +49,12 @@ export default async function DocumentsPage() {
             rentals={options.rentals}
             templates={options.templates}
           />
+          <AccountStatementForm customers={options.customers} />
           <article className="panel-card panel-card--soft">
-            <h2>Document workflow</h2>
+            <h2>Document records</h2>
             <p>
               Saved templates turn customer, unit, rental, site, and balance details into a ready document for review,
-              printing, or email.
+              printing, or email. Account statements are generated directly from posted charges and payments.
             </p>
           </article>
         </div>

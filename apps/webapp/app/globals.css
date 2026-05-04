@@ -624,6 +624,7 @@ a {
 }
 
 .document-grid,
+.import-spec-grid,
 .report-list {
   display: grid;
   gap: 16px;
@@ -803,6 +804,24 @@ a {
   line-height: 1.65;
 }
 
+.rent-run-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(180px, 240px) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.import-header-preview {
+  overflow-x: auto;
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid rgba(90, 66, 34, 0.08);
+  border-radius: var(--rg-radius-small);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--rg-color-muted);
+  font: 0.85rem/1.5 var(--rg-font-mono), monospace;
+}
+
 .report-row {
   display: flex;
   align-items: center;
@@ -832,6 +851,7 @@ a {
   .overview-grid,
   .workspace-grid,
   .detail-grid,
+  .rent-run-controls,
   .document-step-grid,
   .document-template-grid,
   .document-preview-layout {

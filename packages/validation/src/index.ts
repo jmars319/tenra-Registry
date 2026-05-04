@@ -13,6 +13,7 @@ import { z } from "zod";
 
 const entityIdSchema = z.string().min(1);
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u, "Expected YYYY-MM-DD");
+const monthSchema = z.string().regex(/^\d{4}-\d{2}$/u, "Expected YYYY-MM");
 const trimmedOptionalString = z.string().trim().max(200).optional();
 const optionalAddressString = z.string().trim().max(160).optional();
 
@@ -125,6 +126,13 @@ export const createReceivableEntrySchema = z.object({
   notes: z.string().trim().max(500).optional()
 });
 
+export const postRentRunSchema = z.object({
+  organizationId: entityIdSchema,
+  period: monthSchema,
+  dueDate: dateSchema,
+  assignmentIds: z.array(entityIdSchema).min(1)
+});
+
 export const createDocumentTemplateSchema = z.object({
   organizationId: entityIdSchema,
   type: z.enum(documentTemplateTypes),
@@ -149,3 +157,15 @@ export const createGeneratedDocumentSchema = z.object({
     path: ["customerId"]
   }
 );
+
+export const createAccountStatementDocumentSchema = z.object({
+  organizationId: entityIdSchema,
+  customerId: entityIdSchema,
+  title: z.string().trim().max(140).optional()
+});
+
+export const updateGeneratedDocumentStatusSchema = z.object({
+  organizationId: entityIdSchema,
+  documentId: entityIdSchema,
+  status: z.enum(["printed", "emailed"])
+});

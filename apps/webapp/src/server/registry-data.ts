@@ -2,10 +2,13 @@ import type {
   CreateAssignmentRequest,
   CreateAssetRequest,
   CreateCustomerRequest,
+  CreateAccountStatementDocumentRequest,
   CreateDocumentTemplateRequest,
   CreateGeneratedDocumentRequest,
+  PostRentRunRequest,
   CreateReceivableEntryRequest,
-  TransitionAssignmentStatusRequest
+  TransitionAssignmentStatusRequest,
+  UpdateGeneratedDocumentStatusRequest
 } from "@registry/api-contracts";
 import {
   REGISTRY_DEFAULT_ORGANIZATION_SLUG,
@@ -69,6 +72,12 @@ const receivableTypeOrder = new Map<ReceivableEntryType, number>([
   ["credit", 5]
 ]);
 
+const monthPeriodFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  timeZone: "UTC",
+  year: "numeric"
+});
+
 type RegistryTransaction = Prisma.TransactionClient;
 type PrismaDocumentTemplateType =
   | "RENTAL_AGREEMENT"
@@ -104,6 +113,18 @@ function parseDateOnly(value: string): Date {
 
 function getTodayIsoDate(): string {
   return dateToIsoDate(new Date());
+}
+
+export function getDefaultRentRunPeriod(): string {
+  return getTodayIsoDate().slice(0, 7);
+}
+
+export function getDefaultRentRunDueDate(period = getDefaultRentRunPeriod()): string {
+  return `${period}-10`;
+}
+
+export function formatRentRunPeriodLabel(period: string): string {
+  return monthPeriodFormatter.format(parseDateOnly(`${period}-01`));
 }
 
 function prismaStatusToOrganizationStatus(value: "ACTIVE" | "INACTIVE"): OrganizationStatus {
@@ -619,6 +640,35 @@ export interface ReceivableAssignmentOption {
   label: string;
   customerId: string;
   assetId: string;
+}
+
+export interface RentRunPreviewLine {
+  assignmentId: string;
+  customerId: string;
+  customerName: string;
+  customerHref: string;
+  assetId: string;
+  assetCode: string;
+  assetName: string;
+  assetHref: string;
+  siteLabel: string;
+  billingCadence: Assignment["billingCadence"];
+  amountInCents: number;
+  startDate: string;
+  reference: string;
+  alreadyPosted: boolean;
+  existingEntryId?: string | undefined;
+}
+
+export interface RentRunPreview {
+  organization: Organization;
+  period: string;
+  chargeDate: string;
+  dueDate: string;
+  lines: RentRunPreviewLine[];
+  readyCount: number;
+  readyTotalInCents: number;
+  postedCount: number;
 }
 
 export interface DocumentRentalOption {
@@ -1652,6 +1702,188 @@ export async function createReceivableEntry(input: CreateReceivableEntryRequest)
   return serializeReceivableEntry(entry);
 }
 
+function getRentRunReference(period: string, assignmentId: string): string {
+  return `rent-run:${period}:${assignmentId}`;
+}
+
+function formatRentRunSiteLabel(assignment: {
+  siteName: string | null;
+  siteStreet1: string | null;
+  siteStreet2: string | null;
+  siteCity: string | null;
+  siteState: string | null;
+  sitePostalCode: string | null;
+}): string {
+  return formatAssignmentSite(assignment).replace(/\n/gu, " · ") || "No rental site recorded";
+}
+
+export async function getRentRunPreview(
+  period = getDefaultRentRunPeriod(),
+  dueDate = getDefaultRentRunDueDate(period)
+): Promise<RentRunPreview> {
+  const organization = await getDefaultOrganization();
+
+  const activeAssignments = await db.assignment.findMany({
+    where: {
+      organizationId: organization.id,
+      status: "ACTIVE"
+    },
+    include: {
+      customer: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      asset: {
+        select: {
+          id: true,
+          assetCode: true,
+          name: true
+        }
+      }
+    },
+    orderBy: [
+      {
+        customer: {
+          name: "asc"
+        }
+      },
+      {
+        startDate: "asc"
+      }
+    ]
+  });
+  const references = activeAssignments.map((assignment) => getRentRunReference(period, assignment.id));
+  const existingEntries =
+    references.length > 0
+      ? await db.receivableEntry.findMany({
+          where: {
+            organizationId: organization.id,
+            status: "POSTED",
+            reference: {
+              in: references
+            }
+          },
+          select: {
+            id: true,
+            reference: true
+          }
+        })
+      : [];
+  const existingByReference = new Map(
+    existingEntries
+      .filter((entry): entry is { id: string; reference: string } => typeof entry.reference === "string")
+      .map((entry) => [entry.reference, entry.id])
+  );
+
+  const lines = activeAssignments.map((assignment) => {
+    const reference = getRentRunReference(period, assignment.id);
+    const existingEntryId = existingByReference.get(reference);
+
+    return {
+      assignmentId: assignment.id,
+      customerId: assignment.customerId,
+      customerName: assignment.customer.name,
+      customerHref: getCustomerRoute(assignment.customer.id),
+      assetId: assignment.assetId,
+      assetCode: assignment.asset.assetCode,
+      assetName: assignment.asset.name,
+      assetHref: getAssetRoute(assignment.asset.id),
+      siteLabel: formatRentRunSiteLabel(assignment),
+      billingCadence: prismaCadenceToDomain(assignment.billingCadence),
+      amountInCents: assignment.rateInCents,
+      startDate: dateToIsoDate(assignment.startDate),
+      reference,
+      alreadyPosted: Boolean(existingEntryId),
+      ...(existingEntryId ? { existingEntryId } : {})
+    };
+  });
+  const readyLines = lines.filter((line) => !line.alreadyPosted);
+
+  return {
+    organization,
+    period,
+    chargeDate: `${period}-01`,
+    dueDate,
+    lines,
+    readyCount: readyLines.length,
+    readyTotalInCents: readyLines.reduce((total, line) => total + line.amountInCents, 0),
+    postedCount: lines.length - readyLines.length
+  };
+}
+
+export async function postRentRun(input: PostRentRunRequest): Promise<{
+  postedCount: number;
+  skippedCount: number;
+  totalInCents: number;
+}> {
+  const organization = await getDefaultOrganization();
+
+  if (input.organizationId !== organization.id) {
+    throw new Error("Rent runs must be posted inside the default organization.");
+  }
+
+  const preview = await getRentRunPreview(input.period, input.dueDate);
+  const selectedAssignmentIds = new Set(input.assignmentIds);
+  const selectedLines = preview.lines.filter((line) => selectedAssignmentIds.has(line.assignmentId));
+
+  if (selectedLines.length === 0) {
+    throw new Error("Choose at least one rental to post.");
+  }
+
+  let postedCount = 0;
+  let skippedCount = 0;
+  let totalInCents = 0;
+
+  await db.$transaction(async (transaction) => {
+    for (const line of selectedLines) {
+      const existingEntry = await transaction.receivableEntry.findFirst({
+        where: {
+          organizationId: organization.id,
+          status: "POSTED",
+          reference: line.reference
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (existingEntry) {
+        skippedCount += 1;
+        continue;
+      }
+
+      await transaction.receivableEntry.create({
+        data: {
+          organizationId: organization.id,
+          customerId: line.customerId,
+          assignmentId: line.assignmentId,
+          assetId: line.assetId,
+          type: "CHARGE",
+          status: "POSTED",
+          description: `${formatRentRunPeriodLabel(input.period)} rent`,
+          effectiveDate: parseDateOnly(preview.chargeDate),
+          dueDate: parseDateOnly(input.dueDate),
+          amountInCents: normalizeReceivableAmount("charge", line.amountInCents),
+          paymentMethod: null,
+          reference: line.reference,
+          notes: `Posted from rent run for ${formatRentRunPeriodLabel(input.period)}.`
+        }
+      });
+
+      postedCount += 1;
+      totalInCents += line.amountInCents;
+    }
+  });
+
+  return {
+    postedCount,
+    skippedCount,
+    totalInCents
+  };
+}
+
 export async function listDocumentTemplates(): Promise<DocumentTemplate[]> {
   const organization = await getDefaultOrganization();
 
@@ -1945,6 +2177,171 @@ export async function createGeneratedDocument(input: CreateGeneratedDocumentRequ
   });
 
   return serializeGeneratedDocument(document);
+}
+
+function formatCustomerBillingAddress(customer: {
+  billingStreet1: string | null;
+  billingStreet2: string | null;
+  billingCity: string | null;
+  billingState: string | null;
+  billingPostalCode: string | null;
+  billingCountry: string | null;
+}): string {
+  const cityStatePostal = [customer.billingCity, customer.billingState, customer.billingPostalCode]
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .join(", ");
+
+  return [
+    customer.billingStreet1,
+    customer.billingStreet2,
+    cityStatePostal,
+    customer.billingCountry
+  ]
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .join("\n");
+}
+
+function formatStatementEntryLine(entry: {
+  effectiveDate: Date;
+  dueDate: Date | null;
+  description: string;
+  amountInCents: number;
+  asset: {
+    assetCode: string;
+  } | null;
+}): string {
+  const dueLabel = entry.dueDate ? `Due ${dateToIsoDate(entry.dueDate)}` : "No due date";
+  const unitLabel = entry.asset?.assetCode ?? "Account";
+
+  return `${dateToIsoDate(entry.effectiveDate)} | ${unitLabel} | ${entry.description} | ${dueLabel} | ${formatUsdCents(
+    entry.amountInCents
+  )}`;
+}
+
+export async function createAccountStatementDocument(
+  input: CreateAccountStatementDocumentRequest
+): Promise<GeneratedDocument> {
+  const organization = await getDefaultOrganization();
+
+  if (input.organizationId !== organization.id) {
+    throw new Error("Account statements must be created inside the default organization.");
+  }
+
+  const customer = await db.customer.findFirst({
+    where: {
+      id: input.customerId,
+      organizationId: organization.id
+    },
+    include: {
+      receivableEntries: {
+        where: {
+          status: "POSTED"
+        },
+        include: {
+          asset: {
+            select: {
+              assetCode: true
+            }
+          }
+        },
+        orderBy: [
+          {
+            effectiveDate: "asc"
+          },
+          {
+            createdAt: "asc"
+          }
+        ]
+      }
+    }
+  });
+
+  if (!customer) {
+    throw new Error("Customer not found.");
+  }
+
+  const today = getTodayIsoDate();
+  const balance = summarizeReceivableEntries(customer.receivableEntries.map(serializeReceivableEntry), today);
+  const statementLines = customer.receivableEntries.map(formatStatementEntryLine);
+  const billingAddress = formatCustomerBillingAddress(customer);
+  const body = [
+    `${organization.name}`,
+    "",
+    `Account statement for ${customer.name}`,
+    customer.companyName ? `Company: ${customer.companyName}` : undefined,
+    customer.email ? `Email: ${customer.email}` : undefined,
+    customer.phone ? `Phone: ${customer.phone}` : undefined,
+    billingAddress ? `Billing address:\n${billingAddress}` : undefined,
+    "",
+    "Account activity",
+    statementLines.length > 0 ? statementLines.join("\n") : "No posted charges or payments yet.",
+    "",
+    `Total charges: ${formatUsdCents(balance.totalChargesInCents)}`,
+    `Payments and credits: ${formatUsdCents(balance.totalCreditsInCents)}`,
+    `Balance due: ${formatUsdCents(balance.balanceInCents)}`,
+    `Past due: ${formatUsdCents(balance.pastDueInCents)}`,
+    balance.lastPaymentDate ? `Last payment or credit: ${balance.lastPaymentDate}` : undefined
+  ]
+    .filter((line): line is string => typeof line === "string")
+    .join("\n");
+  const title = input.title?.trim() || `Account statement - ${customer.name} - ${today}`;
+
+  const document = await db.generatedDocument.create({
+    data: {
+      organizationId: organization.id,
+      templateId: null,
+      customerId: customer.id,
+      assignmentId: null,
+      assetId: null,
+      type: "ACCOUNT_STATEMENT",
+      title,
+      subject: `Account statement from ${organization.name}`,
+      body,
+      recipientEmail: customer.email
+    }
+  });
+
+  return serializeGeneratedDocument(document);
+}
+
+export async function updateGeneratedDocumentStatus(
+  input: UpdateGeneratedDocumentStatusRequest
+): Promise<GeneratedDocument> {
+  const organization = await getDefaultOrganization();
+
+  if (input.organizationId !== organization.id) {
+    throw new Error("Documents must be updated inside the default organization.");
+  }
+
+  const document = await db.generatedDocument.findFirst({
+    where: {
+      id: input.documentId,
+      organizationId: organization.id
+    }
+  });
+
+  if (!document) {
+    throw new Error("Document not found.");
+  }
+
+  const now = new Date();
+  const updatedDocument = await db.generatedDocument.update({
+    where: {
+      id: document.id
+    },
+    data:
+      input.status === "printed"
+        ? {
+            status: "PRINTED",
+            printedAt: now
+          }
+        : {
+            status: "EMAILED",
+            emailedAt: now
+          }
+  });
+
+  return serializeGeneratedDocument(updatedDocument);
 }
 
 export async function getReportsSnapshot(): Promise<{

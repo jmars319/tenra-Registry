@@ -14,6 +14,8 @@ const toneMap: Record<string, "neutral" | "success" | "warning" | "muted"> = {
   draft: "neutral",
   inactive: "muted",
   posted: "success",
+  printed: "success",
+  emailed: "success",
   void: "muted",
   overdue: "warning",
   current: "success",

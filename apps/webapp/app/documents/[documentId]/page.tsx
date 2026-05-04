@@ -44,6 +44,7 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
             </div>
             <DocumentDeliveryActions
               body={detail.document.body}
+              documentId={detail.document.id}
               recipientEmail={detail.document.recipientEmail}
               subject={detail.document.subject}
             />
@@ -67,6 +68,22 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
               <div>
                 <dt>Email</dt>
                 <dd>{detail.document.recipientEmail ?? "No email on file"}</dd>
+              </div>
+              <div>
+                <dt>Printed</dt>
+                <dd>
+                  {detail.document.printedAt
+                    ? formatDateLabel(detail.document.printedAt.slice(0, 10))
+                    : "Not printed yet"}
+                </dd>
+              </div>
+              <div>
+                <dt>Email opened</dt>
+                <dd>
+                  {detail.document.emailedAt
+                    ? formatDateLabel(detail.document.emailedAt.slice(0, 10))
+                    : "Not emailed yet"}
+                </dd>
               </div>
             </dl>
             <Link className="inline-link" href="/documents">

@@ -140,6 +140,19 @@ export interface CreateReceivableEntryResponse {
   entry: ReceivableEntry;
 }
 
+export interface PostRentRunRequest {
+  organizationId: EntityId;
+  period: string;
+  dueDate: string;
+  assignmentIds: EntityId[];
+}
+
+export interface PostRentRunResponse {
+  postedCount: number;
+  skippedCount: number;
+  totalInCents: number;
+}
+
 export interface ListReceivableEntriesRequest {
   organizationId: EntityId;
   customerId?: EntityId | undefined;
@@ -175,4 +188,16 @@ export interface CreateGeneratedDocumentRequest {
 
 export interface CreateGeneratedDocumentResponse {
   document: GeneratedDocument;
+}
+
+export interface CreateAccountStatementDocumentRequest {
+  organizationId: EntityId;
+  customerId: EntityId;
+  title?: GeneratedDocument["title"] | undefined;
+}
+
+export interface UpdateGeneratedDocumentStatusRequest {
+  organizationId: EntityId;
+  documentId: EntityId;
+  status: Extract<GeneratedDocument["status"], "printed" | "emailed">;
 }

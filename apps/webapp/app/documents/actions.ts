@@ -1,19 +1,25 @@
 "use server";
 
 import type {
+  CreateAccountStatementDocumentRequest,
   CreateDocumentTemplateRequest,
-  CreateGeneratedDocumentRequest
+  CreateGeneratedDocumentRequest,
+  UpdateGeneratedDocumentStatusRequest
 } from "@registry/api-contracts";
 import { registryWebRoutes } from "@registry/config";
 import {
+  createAccountStatementDocumentSchema,
   createDocumentTemplateSchema,
-  createGeneratedDocumentSchema
+  createGeneratedDocumentSchema,
+  updateGeneratedDocumentStatusSchema
 } from "@registry/validation";
 import { revalidatePath } from "next/cache";
 import {
+  createAccountStatementDocument,
   createDocumentTemplate,
   createGeneratedDocument,
-  getDefaultOrganization
+  getDefaultOrganization,
+  updateGeneratedDocumentStatus
 } from "../../src/server/registry-data";
 import {
   flattenFieldErrors,
@@ -116,4 +122,70 @@ export async function createGeneratedDocumentAction(
     status: "success",
     message: "Document created."
   };
+}
+
+export async function createAccountStatementDocumentAction(
+  _previousState: FormActionState,
+  formData: FormData
+): Promise<FormActionState> {
+  const organization = await getDefaultOrganization();
+  const payload: CreateAccountStatementDocumentRequest = {
+    organizationId: organization.id,
+    customerId: getRequiredFormValue(formData, "customerId"),
+    title: getOptionalFormValue(formData, "title")
+  };
+  const result = createAccountStatementDocumentSchema.safeParse(payload);
+
+  if (!result.success) {
+    return {
+      status: "error",
+      message: "Choose the account for this statement.",
+      fieldErrors: flattenFieldErrors(result.error.flatten().fieldErrors)
+    };
+  }
+
+  try {
+    await createAccountStatementDocument(result.data);
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "Account statement could not be created."
+    };
+  }
+
+  revalidatePath(registryWebRoutes.documents);
+
+  return {
+    status: "success",
+    message: "Account statement created."
+  };
+}
+
+async function updateDocumentStatusAction(
+  documentId: string,
+  status: UpdateGeneratedDocumentStatusRequest["status"]
+): Promise<void> {
+  const organization = await getDefaultOrganization();
+  const payload: UpdateGeneratedDocumentStatusRequest = {
+    organizationId: organization.id,
+    documentId,
+    status
+  };
+  const result = updateGeneratedDocumentStatusSchema.safeParse(payload);
+
+  if (!result.success) {
+    throw new Error("Document status update was invalid.");
+  }
+
+  await updateGeneratedDocumentStatus(result.data);
+  revalidatePath(registryWebRoutes.documents);
+  revalidatePath(`${registryWebRoutes.documents}/${documentId}`);
+}
+
+export async function markGeneratedDocumentPrintedAction(documentId: string): Promise<void> {
+  await updateDocumentStatusAction(documentId, "printed");
+}
+
+export async function markGeneratedDocumentEmailedAction(documentId: string): Promise<void> {
+  await updateDocumentStatusAction(documentId, "emailed");
 }
