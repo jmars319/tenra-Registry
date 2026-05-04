@@ -48,6 +48,9 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
               recipientEmail={detail.document.recipientEmail}
               subject={detail.document.subject}
             />
+            <a className="button-secondary button-link" href={`/documents/${detail.document.id}/pdf`}>
+              Download PDF
+            </a>
             <dl className="detail-list">
               <div>
                 <dt>Customer</dt>
@@ -89,6 +92,42 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
             <Link className="inline-link" href="/documents">
               Back to documents
             </Link>
+          </article>
+
+          <article className="panel-card">
+            <div className="section-heading section-heading--compact">
+              <div>
+                <p className="eyebrow">History</p>
+                <h2>Delivery log</h2>
+              </div>
+            </div>
+            <div className="activity-list">
+              <div className="activity-item">
+                <div className="activity-item__heading">
+                  <strong>Created</strong>
+                  <StatusPill status="draft" />
+                </div>
+                <p>{formatDateLabel(detail.document.createdAt.slice(0, 10))}</p>
+              </div>
+              {detail.document.printedAt ? (
+                <div className="activity-item">
+                  <div className="activity-item__heading">
+                    <strong>Printed</strong>
+                    <StatusPill status="printed" />
+                  </div>
+                  <p>{formatDateLabel(detail.document.printedAt.slice(0, 10))}</p>
+                </div>
+              ) : null}
+              {detail.document.emailedAt ? (
+                <div className="activity-item">
+                  <div className="activity-item__heading">
+                    <strong>Email draft opened</strong>
+                    <StatusPill status="emailed" />
+                  </div>
+                  <p>{formatDateLabel(detail.document.emailedAt.slice(0, 10))}</p>
+                </div>
+              ) : null}
+            </div>
           </article>
         </aside>
 

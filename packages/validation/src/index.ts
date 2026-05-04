@@ -130,6 +130,7 @@ export const postRentRunSchema = z.object({
   organizationId: entityIdSchema,
   period: monthSchema,
   dueDate: dateSchema,
+  billingDay: z.number().int().min(1).max(28),
   assignmentIds: z.array(entityIdSchema).min(1)
 });
 
@@ -157,6 +158,19 @@ export const createGeneratedDocumentSchema = z.object({
     path: ["customerId"]
   }
 );
+
+export const saveGeneratedDocumentDraftSchema = z.object({
+  organizationId: entityIdSchema,
+  templateId: entityIdSchema.optional(),
+  customerId: entityIdSchema,
+  assignmentId: entityIdSchema.optional(),
+  assetId: entityIdSchema.optional(),
+  type: z.enum(documentTemplateTypes),
+  title: z.string().trim().min(1).max(140),
+  subject: z.string().trim().max(160).optional(),
+  body: z.string().trim().min(1).max(6000),
+  recipientEmail: z.string().trim().email().max(160).optional()
+});
 
 export const createAccountStatementDocumentSchema = z.object({
   organizationId: entityIdSchema,

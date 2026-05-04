@@ -49,7 +49,7 @@ export function DocumentDeliveryActions({ body, documentId, recipientEmail, subj
         {isPending ? "Working..." : "Print"}
       </button>
       <button className="button-secondary" disabled={isPending} onClick={handleEmail} type="button">
-        Email
+        Email draft
       </button>
     </div>
   );

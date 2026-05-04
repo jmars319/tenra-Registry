@@ -144,6 +144,7 @@ export interface PostRentRunRequest {
   organizationId: EntityId;
   period: string;
   dueDate: string;
+  billingDay: number;
   assignmentIds: EntityId[];
 }
 
@@ -188,6 +189,19 @@ export interface CreateGeneratedDocumentRequest {
 
 export interface CreateGeneratedDocumentResponse {
   document: GeneratedDocument;
+}
+
+export interface SaveGeneratedDocumentDraftRequest {
+  organizationId: EntityId;
+  templateId?: EntityId | undefined;
+  customerId: EntityId;
+  assignmentId?: EntityId | undefined;
+  assetId?: EntityId | undefined;
+  type: GeneratedDocument["type"];
+  title: GeneratedDocument["title"];
+  subject?: GeneratedDocument["subject"] | undefined;
+  body: GeneratedDocument["body"];
+  recipientEmail?: GeneratedDocument["recipientEmail"] | undefined;
 }
 
 export interface CreateAccountStatementDocumentRequest {

@@ -78,6 +78,16 @@ enum GeneratedDocumentStatus {
   ARCHIVED
 }
 
+enum ImportBatchStatus {
+  IMPORTED
+  ROLLED_BACK
+}
+
+enum ImportRecordAction {
+  CREATED
+  ROLLED_BACK
+}
+
 model Organization {
   id                 String              @id @default(cuid())
   name               String
@@ -91,11 +101,13 @@ model Organization {
   receivableEntries  ReceivableEntry[]
   documentTemplates  DocumentTemplate[]
   generatedDocuments GeneratedDocument[]
+  importBatches      ImportBatch[]
 }
 
 model Customer {
   id                 String              @id @default(cuid())
   organizationId     String
+  externalCode       String?
   name               String
   companyName        String?
   email              String?
@@ -115,12 +127,14 @@ model Customer {
   receivableEntries  ReceivableEntry[]
   generatedDocuments GeneratedDocument[]
 
+  @@unique([organizationId, externalCode])
   @@index([organizationId, status])
 }
 
 model Asset {
   id                 String              @id @default(cuid())
   organizationId     String
+  externalCode       String?
   assetCode          String
   name               String
   category           AssetCategory
@@ -138,6 +152,7 @@ model Asset {
   receivableEntries  ReceivableEntry[]
   generatedDocuments GeneratedDocument[]
 
+  @@unique([organizationId, externalCode])
   @@unique([organizationId, assetCode])
   @@index([organizationId, status])
 }
@@ -145,6 +160,7 @@ model Asset {
 model Assignment {
   id                   String              @id @default(cuid())
   organizationId       String
+  externalCode         String?
   customerId           String
   assetId              String
   startDate            DateTime            @db.Date
@@ -172,6 +188,7 @@ model Assignment {
   receivableEntries    ReceivableEntry[]
   generatedDocuments   GeneratedDocument[]
 
+  @@unique([organizationId, externalCode])
   @@index([organizationId, status])
   @@index([customerId, status])
   @@index([assetId, status])
@@ -180,6 +197,7 @@ model Assignment {
 model ReceivableEntry {
   id             String                @id @default(cuid())
   organizationId String
+  externalCode   String?
   customerId     String
   assignmentId   String?
   assetId        String?
@@ -199,6 +217,7 @@ model ReceivableEntry {
   assignment     Assignment?           @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
   asset          Asset?                @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
+  @@unique([organizationId, externalCode])
   @@index([organizationId, effectiveDate])
   @@index([customerId, status])
   @@index([assignmentId, status])
@@ -251,4 +270,36 @@ model GeneratedDocument {
   @@index([organizationId, createdAt])
   @@index([customerId, createdAt])
   @@index([assignmentId, createdAt])
+}
+
+model ImportBatch {
+  id             String            @id @default(cuid())
+  organizationId String
+  label          String
+  status         ImportBatchStatus @default(IMPORTED)
+  summary        Json
+  rolledBackAt   DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  records        ImportRecord[]
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, status])
+}
+
+model ImportRecord {
+  id          String             @id @default(cuid())
+  batchId     String
+  dataset     String
+  sourceKey   String
+  targetModel String
+  targetId    String
+  action      ImportRecordAction @default(CREATED)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  batch       ImportBatch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId, dataset])
+  @@index([targetModel, targetId])
 }

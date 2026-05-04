@@ -29,4 +29,4 @@ These keys make the import repeatable and auditable before cutover.
 
 ## Current Status
 
-This pass defines the import layouts and exposes blank CSV headers in the app. The next implementation step is a dry-run importer that reads these files, reports validation errors, and shows a preview before writing records.
+The import screen can dry-run uploaded CSV files, report validation and cross-reference errors, show row counts, execute the import, write an import batch audit trail, and roll back records created by that batch. The field mapping should still be checked against a real Total Recall export before cutover.

@@ -2,7 +2,11 @@
 
 import { getDocumentTemplateTypeLabel } from "@registry/domain";
 import { useActionState, useEffect, useRef } from "react";
-import { createGeneratedDocumentAction } from "../../../app/documents/actions";
+import {
+  previewGeneratedDocumentAction,
+  saveGeneratedDocumentDraftAction,
+  type GeneratedDocumentFormActionState
+} from "../../../app/documents/actions";
 import type {
   DocumentRentalOption,
   ReceivableCustomerOption
@@ -22,14 +26,21 @@ function getFieldError(fieldErrors: Record<string, string> | undefined, field: s
 }
 
 export function GeneratedDocumentForm({ customers, rentals, templates }: GeneratedDocumentFormProps) {
-  const [state, formAction] = useActionState(createGeneratedDocumentAction, initialFormActionState);
+  const [state, previewFormAction] = useActionState<GeneratedDocumentFormActionState, FormData>(
+    previewGeneratedDocumentAction,
+    initialFormActionState
+  );
+  const [saveState, saveFormAction] = useActionState<GeneratedDocumentFormActionState, FormData>(
+    saveGeneratedDocumentDraftAction,
+    initialFormActionState
+  );
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (state.status === "success") {
+    if (saveState.status === "success") {
       formRef.current?.reset();
     }
-  }, [state.status]);
+  }, [saveState.status]);
 
   return (
     <article className="panel-card document-create-card">
@@ -40,7 +51,7 @@ export function GeneratedDocumentForm({ customers, rentals, templates }: Generat
         </div>
       </div>
 
-      <form action={formAction} className="form-stack" ref={formRef}>
+      <form action={previewFormAction} className="form-stack" ref={formRef}>
         <label className="form-field">
           <span>Document</span>
           <select className="form-select" name="templateId" required>
@@ -94,9 +105,61 @@ export function GeneratedDocumentForm({ customers, rentals, templates }: Generat
               </p>
             ) : null}
           </div>
-          <FormSubmitButton idleLabel="Create document" pendingLabel="Creating..." />
+          <FormSubmitButton idleLabel="Preview document" pendingLabel="Preparing..." />
         </div>
       </form>
+
+      {state.preview ? (
+        <form action={saveFormAction} className="form-stack document-draft-form">
+          <input name="templateId" type="hidden" value={state.preview.templateId ?? ""} />
+          <input name="customerId" type="hidden" value={state.preview.customerId} />
+          <input name="assignmentId" type="hidden" value={state.preview.assignmentId ?? ""} />
+          <input name="assetId" type="hidden" value={state.preview.assetId ?? ""} />
+          <input name="type" type="hidden" value={state.preview.type} />
+          <input name="recipientEmail" type="hidden" value={state.preview.recipientEmail ?? ""} />
+
+          <div className="section-heading section-heading--compact">
+            <div>
+              <p className="eyebrow">Review</p>
+              <h2>Edit before saving</h2>
+            </div>
+          </div>
+
+          <label className="form-field">
+            <span>Title</span>
+            <input className="form-input" defaultValue={state.preview.title} name="title" required type="text" />
+            <small className="field-error">{getFieldError(saveState.fieldErrors, "title")}</small>
+          </label>
+
+          <label className="form-field">
+            <span>Email subject</span>
+            <input className="form-input" defaultValue={state.preview.subject ?? ""} name="subject" type="text" />
+            <small className="field-error">{getFieldError(saveState.fieldErrors, "subject")}</small>
+          </label>
+
+          <label className="form-field">
+            <span>Document wording</span>
+            <textarea className="form-textarea" defaultValue={state.preview.body} name="body" required rows={12} />
+            <small className="field-error">{getFieldError(saveState.fieldErrors, "body")}</small>
+          </label>
+
+          <p className="table-subcopy">
+            {state.preview.customerName}
+            {state.preview.assetCode ? ` · ${state.preview.assetCode}` : ""}
+          </p>
+
+          <div className="form-actions">
+            <div className="form-feedback">
+              {saveState.message ? (
+                <p className={saveState.status === "error" ? "form-message form-message--error" : "form-message"}>
+                  {saveState.message}
+                </p>
+              ) : null}
+            </div>
+            <FormSubmitButton idleLabel="Save document" pendingLabel="Saving..." />
+          </div>
+        </form>
+      ) : null}
     </article>
   );
 }

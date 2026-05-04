@@ -8,9 +8,11 @@ import {
 import { StatusPill } from "../../src/components/registry/status-pill";
 import {
   formatRentRunPeriodLabel,
+  getDefaultRentRunBillingDay,
   getDefaultRentRunDueDate,
   getDefaultRentRunPeriod,
-  getRentRunPreview
+  getRentRunPreview,
+  listRentRunHistory
 } from "../../src/server/registry-data";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +21,7 @@ interface RentRunPageProps {
   searchParams?: Promise<{
     period?: string | undefined;
     dueDate?: string | undefined;
+    billingDay?: string | undefined;
     posted?: string | undefined;
     skipped?: string | undefined;
     error?: string | undefined;
@@ -29,15 +32,29 @@ function normalizePeriod(value: string | undefined): string {
   return value && /^\d{4}-\d{2}$/u.test(value) ? value : getDefaultRentRunPeriod();
 }
 
-function normalizeDueDate(value: string | undefined, period: string): string {
-  return value && /^\d{4}-\d{2}-\d{2}$/u.test(value) ? value : getDefaultRentRunDueDate(period);
+function normalizeDueDate(value: string | undefined, period: string, billingDay: number): string {
+  return value && /^\d{4}-\d{2}-\d{2}$/u.test(value) ? value : getDefaultRentRunDueDate(period, billingDay);
+}
+
+function normalizeBillingDay(value: string | undefined): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+
+  if (Number.isNaN(parsed)) {
+    return getDefaultRentRunBillingDay();
+  }
+
+  return Math.min(28, Math.max(1, parsed));
 }
 
 export default async function RentRunPage({ searchParams }: RentRunPageProps) {
   const params = await searchParams;
   const period = normalizePeriod(params?.period);
-  const dueDate = normalizeDueDate(params?.dueDate, period);
-  const preview = await getRentRunPreview(period, dueDate);
+  const billingDay = normalizeBillingDay(params?.billingDay);
+  const dueDate = normalizeDueDate(params?.dueDate, period, billingDay);
+  const [preview, history] = await Promise.all([
+    getRentRunPreview(period, dueDate, billingDay),
+    listRentRunHistory()
+  ]);
   const postedMessage =
     params?.posted !== undefined
       ? `${params.posted} charge${params.posted === "1" ? "" : "s"} posted${
@@ -60,6 +77,10 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
         <label className="form-field">
           <span>Billing month</span>
           <input className="form-input" defaultValue={period} name="period" type="month" />
+        </label>
+        <label className="form-field">
+          <span>Billing day</span>
+          <input className="form-input" defaultValue={billingDay} max={28} min={1} name="billingDay" type="number" />
         </label>
         <label className="form-field">
           <span>Due date</span>
@@ -92,7 +113,7 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
         <article className="metric-card">
           <p>Due</p>
           <strong>{formatDateLabel(preview.dueDate)}</strong>
-          <span>Due date assigned to new charges from this run.</span>
+          <span>Billing day {preview.billingDay}; charges post on {formatDateLabel(preview.chargeDate)}.</span>
         </article>
       </div>
 
@@ -109,6 +130,7 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
 
         <input name="period" type="hidden" value={preview.period} />
         <input name="dueDate" type="hidden" value={preview.dueDate} />
+        <input name="billingDay" type="hidden" value={preview.billingDay} />
 
         {preview.lines.length === 0 ? (
           <div className="empty-state">
@@ -134,8 +156,8 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
                   <tr key={line.assignmentId}>
                     <td className="no-print">
                       <input
-                        defaultChecked={!line.alreadyPosted}
-                        disabled={line.alreadyPosted}
+                        defaultChecked={!line.alreadyPosted && line.amountInCents > 0}
+                        disabled={line.alreadyPosted || line.amountInCents <= 0}
                         name="assignmentId"
                         type="checkbox"
                         value={line.assignmentId}
@@ -147,6 +169,7 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
                         {line.customerName}
                       </Link>
                       <span className="table-subcopy">Started {formatDateLabel(line.startDate)}</span>
+                      {line.endDate ? <span className="table-subcopy">Ends {formatDateLabel(line.endDate)}</span> : null}
                     </td>
                     <td>
                       <Link className="table-link" href={line.assetHref}>
@@ -158,10 +181,16 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
                     <td>
                       <StatusPill status={line.billingCadence} />
                     </td>
-                    <td>{formatRateLabel(line.amountInCents)}</td>
+                    <td>
+                      {formatRateLabel(line.amountInCents)}
+                      <span className="table-subcopy">{line.calculation}</span>
+                      <span className="table-subcopy">Base rate {formatRateLabel(line.baseRateInCents)}</span>
+                    </td>
                     <td>
                       {line.alreadyPosted ? (
                         <StatusPill label="Already posted" status="posted" />
+                      ) : line.amountInCents <= 0 ? (
+                        <StatusPill label="No active days" status="warning" />
                       ) : (
                         <StatusPill label="Ready" status="active" />
                       )}
@@ -174,6 +203,46 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
           </div>
         )}
       </form>
+
+      <article className="panel-card">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">History</p>
+            <h2>Posted rent runs</h2>
+          </div>
+          <span className="pill">{history.length} periods</span>
+        </div>
+
+        {history.length === 0 ? (
+          <div className="empty-state empty-state--compact">
+            <h3>No posted rent runs</h3>
+            <p>Completed rent runs will appear here after charges are posted.</p>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Posted</th>
+                  <th>Charges</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((item) => (
+                  <tr key={item.period}>
+                    <td>{item.periodLabel}</td>
+                    <td>{formatDateLabel(item.postedOn)}</td>
+                    <td>{item.count}</td>
+                    <td>{formatRateLabel(item.totalInCents)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </article>
     </section>
   );
 }

@@ -4,6 +4,7 @@ import type {
   CreateAccountStatementDocumentRequest,
   CreateDocumentTemplateRequest,
   CreateGeneratedDocumentRequest,
+  SaveGeneratedDocumentDraftRequest,
   UpdateGeneratedDocumentStatusRequest
 } from "@registry/api-contracts";
 import { registryWebRoutes } from "@registry/config";
@@ -11,6 +12,7 @@ import {
   createAccountStatementDocumentSchema,
   createDocumentTemplateSchema,
   createGeneratedDocumentSchema,
+  saveGeneratedDocumentDraftSchema,
   updateGeneratedDocumentStatusSchema
 } from "@registry/validation";
 import { revalidatePath } from "next/cache";
@@ -19,6 +21,9 @@ import {
   createDocumentTemplate,
   createGeneratedDocument,
   getDefaultOrganization,
+  previewGeneratedDocument,
+  saveGeneratedDocumentDraft,
+  type GeneratedDocumentDraft,
   updateGeneratedDocumentStatus
 } from "../../src/server/registry-data";
 import {
@@ -27,6 +32,10 @@ import {
   getRequiredFormValue,
   type FormActionState
 } from "../../src/server/form-state";
+
+export interface GeneratedDocumentFormActionState extends FormActionState {
+  preview?: GeneratedDocumentDraft | undefined;
+}
 
 function getBooleanFormValue(formData: FormData, key: string): boolean {
   return formData.get(key) === "on";
@@ -121,6 +130,86 @@ export async function createGeneratedDocumentAction(
   return {
     status: "success",
     message: "Document created."
+  };
+}
+
+export async function previewGeneratedDocumentAction(
+  _previousState: GeneratedDocumentFormActionState,
+  formData: FormData
+): Promise<GeneratedDocumentFormActionState> {
+  const organization = await getDefaultOrganization();
+  const payload: CreateGeneratedDocumentRequest = {
+    organizationId: organization.id,
+    templateId: getRequiredFormValue(formData, "templateId"),
+    customerId: getOptionalFormValue(formData, "customerId"),
+    assignmentId: getOptionalFormValue(formData, "assignmentId"),
+    title: getOptionalFormValue(formData, "title")
+  };
+  const result = createGeneratedDocumentSchema.safeParse(payload);
+
+  if (!result.success) {
+    return {
+      status: "error",
+      message: "Choose a document and who it is for.",
+      fieldErrors: flattenFieldErrors(result.error.flatten().fieldErrors)
+    };
+  }
+
+  try {
+    return {
+      status: "success",
+      message: "Review the filled document before saving.",
+      preview: await previewGeneratedDocument(result.data)
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "Document preview could not be created."
+    };
+  }
+}
+
+export async function saveGeneratedDocumentDraftAction(
+  _previousState: GeneratedDocumentFormActionState,
+  formData: FormData
+): Promise<GeneratedDocumentFormActionState> {
+  const organization = await getDefaultOrganization();
+  const payload: SaveGeneratedDocumentDraftRequest = {
+    organizationId: organization.id,
+    templateId: getOptionalFormValue(formData, "templateId"),
+    customerId: getRequiredFormValue(formData, "customerId"),
+    assignmentId: getOptionalFormValue(formData, "assignmentId"),
+    assetId: getOptionalFormValue(formData, "assetId"),
+    type: getRequiredFormValue(formData, "type") as SaveGeneratedDocumentDraftRequest["type"],
+    title: getRequiredFormValue(formData, "title"),
+    subject: getOptionalFormValue(formData, "subject"),
+    body: getRequiredFormValue(formData, "body"),
+    recipientEmail: getOptionalFormValue(formData, "recipientEmail")
+  };
+  const result = saveGeneratedDocumentDraftSchema.safeParse(payload);
+
+  if (!result.success) {
+    return {
+      status: "error",
+      message: "Document details need attention.",
+      fieldErrors: flattenFieldErrors(result.error.flatten().fieldErrors)
+    };
+  }
+
+  try {
+    await saveGeneratedDocumentDraft(result.data);
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "Document could not be saved."
+    };
+  }
+
+  revalidatePath(registryWebRoutes.documents);
+
+  return {
+    status: "success",
+    message: "Document saved."
   };
 }
 

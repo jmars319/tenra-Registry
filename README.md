@@ -15,12 +15,12 @@ This repository is now past the pure scaffold stage. The web app is a real full-
 - active-rental protection at the application layer and database layer
 - automatic unit release back to available when active rentals are completed or cancelled
 - receivable ledger entries for charges, deposits, payments, credits, adjustments, and refunds
-- rent-run screen for reviewing active rentals and posting recurring rent charges while skipping already-posted rows
+- hardened rent-run screen for billing-day controls, non-monthly cadence calculation, prorated month starts, selected-rental exclusions, posted-history review, and duplicate-charge skipping
 - customer balance summaries, past-due visibility, and receivables reporting
 - customizable document template library for rental agreements, delivery/pickup tickets, condition reports, receipts, statements, notices, and letters
-- generated document records with print/email actions and status timestamps
+- generated document records with review-before-save editing, PDF download, print/email-draft actions, and status timestamps
 - account statement generation from posted charges, payments, credits, and balances
-- blank CSV import layouts for customers, container units, active rentals, and opening balances
+- blank CSV import layouts plus dry-run validation, import execution, import batch audit records, and rollback support for customers, container units, active rentals, and opening balances
 - print-oriented CSS baseline for document/report output
 - macOS Applications launcher that starts the production Next app locally and opens the Postgres-backed dashboard in a desktop window
 
@@ -68,7 +68,7 @@ pnpm doctor
 - Billing now uses a receivable ledger. Positive entries increase customer balance; payments and credits reduce it.
 - Unit lifecycle automation only moves units between `available` and `assigned`. `maintenance` and `archived` remain manual states.
 - Documents now create generated records and track print/email actions. PDF generation, direct email sending, and immutable delivery history are still future work.
-- Import readiness currently means exact CSV layouts and blank header downloads. The write-side importer should come after a real source export is available for dry-run validation.
+- Imports now support dry-run validation, execution, batch audit records, and rollback for newly imported records. A real source export should still be reviewed before the field mapping is considered final.
 - Auth provider integration and a separate backend service are intentionally deferred.
 - The desktop app is a local launcher, not a standalone distributable yet. Distribution should later bundle or provision the server/database path instead of depending on this repo checkout.
 

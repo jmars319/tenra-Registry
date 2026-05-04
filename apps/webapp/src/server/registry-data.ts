@@ -7,6 +7,7 @@ import type {
   CreateGeneratedDocumentRequest,
   PostRentRunRequest,
   CreateReceivableEntryRequest,
+  SaveGeneratedDocumentDraftRequest,
   TransitionAssignmentStatusRequest,
   UpdateGeneratedDocumentStatusRequest
 } from "@registry/api-contracts";
@@ -119,8 +120,48 @@ export function getDefaultRentRunPeriod(): string {
   return getTodayIsoDate().slice(0, 7);
 }
 
-export function getDefaultRentRunDueDate(period = getDefaultRentRunPeriod()): string {
-  return `${period}-10`;
+export function getDefaultRentRunBillingDay(): number {
+  return 1;
+}
+
+function clampBillingDay(day: number): number {
+  if (!Number.isFinite(day)) {
+    return getDefaultRentRunBillingDay();
+  }
+
+  return Math.min(28, Math.max(1, Math.trunc(day)));
+}
+
+function addDays(value: string, days: number): string {
+  const date = parseDateOnly(value);
+  date.setUTCDate(date.getUTCDate() + days);
+  return dateToIsoDate(date);
+}
+
+function getPeriodStart(period: string): string {
+  return `${period}-01`;
+}
+
+function getPeriodEnd(period: string): string {
+  const [year = 1970, month = 1] = period.split("-").map((part) => Number.parseInt(part, 10));
+  return dateToIsoDate(new Date(Date.UTC(year, month, 0)));
+}
+
+function getDaysInclusive(startDate: string, endDate: string): number {
+  const start = parseDateOnly(startDate).getTime();
+  const end = parseDateOnly(endDate).getTime();
+  return Math.max(0, Math.floor((end - start) / 86_400_000) + 1);
+}
+
+function getRentRunChargeDate(period: string, billingDay: number): string {
+  return `${period}-${String(clampBillingDay(billingDay)).padStart(2, "0")}`;
+}
+
+export function getDefaultRentRunDueDate(
+  period = getDefaultRentRunPeriod(),
+  billingDay = getDefaultRentRunBillingDay()
+): string {
+  return addDays(getRentRunChargeDate(period, billingDay), 9);
 }
 
 export function formatRentRunPeriodLabel(period: string): string {
@@ -654,7 +695,12 @@ export interface RentRunPreviewLine {
   siteLabel: string;
   billingCadence: Assignment["billingCadence"];
   amountInCents: number;
+  baseRateInCents: number;
+  activeDays: number;
+  periodDays: number;
+  calculation: string;
   startDate: string;
+  endDate?: string | undefined;
   reference: string;
   alreadyPosted: boolean;
   existingEntryId?: string | undefined;
@@ -663,12 +709,21 @@ export interface RentRunPreviewLine {
 export interface RentRunPreview {
   organization: Organization;
   period: string;
+  billingDay: number;
   chargeDate: string;
   dueDate: string;
   lines: RentRunPreviewLine[];
   readyCount: number;
   readyTotalInCents: number;
   postedCount: number;
+}
+
+export interface RentRunHistoryItem {
+  period: string;
+  periodLabel: string;
+  postedOn: string;
+  count: number;
+  totalInCents: number;
 }
 
 export interface DocumentRentalOption {
@@ -688,6 +743,20 @@ export interface GeneratedDocumentListItem extends GeneratedDocument {
 export interface GeneratedDocumentDetail {
   document: GeneratedDocumentListItem;
   templateName?: string | undefined;
+}
+
+export interface GeneratedDocumentDraft {
+  templateId?: string | undefined;
+  customerId: string;
+  assignmentId?: string | undefined;
+  assetId?: string | undefined;
+  type: DocumentTemplateType;
+  title: string;
+  subject?: string | undefined;
+  body: string;
+  recipientEmail?: string | undefined;
+  customerName: string;
+  assetCode?: string | undefined;
 }
 
 export async function getDefaultOrganization(): Promise<Organization> {
@@ -1717,16 +1786,79 @@ function formatRentRunSiteLabel(assignment: {
   return formatAssignmentSite(assignment).replace(/\n/gu, " · ") || "No rental site recorded";
 }
 
+function calculateRentRunAmount(input: {
+  billingCadence: Assignment["billingCadence"];
+  rateInCents: number;
+  activeDays: number;
+  periodDays: number;
+}): {
+  amountInCents: number;
+  calculation: string;
+} {
+  if (input.activeDays <= 0) {
+    return {
+      amountInCents: 0,
+      calculation: "No active days in period"
+    };
+  }
+
+  if (input.billingCadence === "daily") {
+    return {
+      amountInCents: input.rateInCents * input.activeDays,
+      calculation: `${input.activeDays} active day${input.activeDays === 1 ? "" : "s"} at ${formatUsdCents(input.rateInCents)} daily`
+    };
+  }
+
+  if (input.billingCadence === "weekly") {
+    const weeks = Math.ceil(input.activeDays / 7);
+
+    return {
+      amountInCents: input.rateInCents * weeks,
+      calculation: `${weeks} billing week${weeks === 1 ? "" : "s"} from ${input.activeDays} active days`
+    };
+  }
+
+  if (input.billingCadence === "monthly" && input.activeDays < input.periodDays) {
+    return {
+      amountInCents: Math.round((input.rateInCents * input.activeDays) / input.periodDays),
+      calculation: `Prorated monthly rent: ${input.activeDays} of ${input.periodDays} days`
+    };
+  }
+
+  return {
+    amountInCents: input.rateInCents,
+    calculation: input.billingCadence === "custom" ? "Custom cadence uses the stored rate" : "Full monthly rent"
+  };
+}
+
 export async function getRentRunPreview(
   period = getDefaultRentRunPeriod(),
-  dueDate = getDefaultRentRunDueDate(period)
+  dueDate = getDefaultRentRunDueDate(period),
+  billingDay = getDefaultRentRunBillingDay()
 ): Promise<RentRunPreview> {
   const organization = await getDefaultOrganization();
+  const normalizedBillingDay = clampBillingDay(billingDay);
+  const periodStart = getPeriodStart(period);
+  const periodEnd = getPeriodEnd(period);
+  const periodDays = getDaysInclusive(periodStart, periodEnd);
 
   const activeAssignments = await db.assignment.findMany({
     where: {
       organizationId: organization.id,
-      status: "ACTIVE"
+      status: "ACTIVE",
+      startDate: {
+        lte: parseDateOnly(periodEnd)
+      },
+      OR: [
+        {
+          endDate: null
+        },
+        {
+          endDate: {
+            gte: parseDateOnly(periodStart)
+          }
+        }
+      ]
     },
     include: {
       customer: {
@@ -1780,6 +1912,18 @@ export async function getRentRunPreview(
   const lines = activeAssignments.map((assignment) => {
     const reference = getRentRunReference(period, assignment.id);
     const existingEntryId = existingByReference.get(reference);
+    const assignmentStart = dateToIsoDate(assignment.startDate);
+    const assignmentEnd = assignment.endDate ? dateToIsoDate(assignment.endDate) : periodEnd;
+    const activeStart = assignmentStart > periodStart ? assignmentStart : periodStart;
+    const activeEnd = assignmentEnd < periodEnd ? assignmentEnd : periodEnd;
+    const activeDays = getDaysInclusive(activeStart, activeEnd);
+    const billingCadence = prismaCadenceToDomain(assignment.billingCadence);
+    const calculation = calculateRentRunAmount({
+      billingCadence,
+      rateInCents: assignment.rateInCents,
+      activeDays,
+      periodDays
+    });
 
     return {
       assignmentId: assignment.id,
@@ -1791,20 +1935,26 @@ export async function getRentRunPreview(
       assetName: assignment.asset.name,
       assetHref: getAssetRoute(assignment.asset.id),
       siteLabel: formatRentRunSiteLabel(assignment),
-      billingCadence: prismaCadenceToDomain(assignment.billingCadence),
-      amountInCents: assignment.rateInCents,
-      startDate: dateToIsoDate(assignment.startDate),
+      billingCadence,
+      amountInCents: calculation.amountInCents,
+      baseRateInCents: assignment.rateInCents,
+      activeDays,
+      periodDays,
+      calculation: calculation.calculation,
+      startDate: assignmentStart,
+      endDate: assignment.endDate ? dateToIsoDate(assignment.endDate) : undefined,
       reference,
       alreadyPosted: Boolean(existingEntryId),
       ...(existingEntryId ? { existingEntryId } : {})
     };
   });
-  const readyLines = lines.filter((line) => !line.alreadyPosted);
+  const readyLines = lines.filter((line) => !line.alreadyPosted && line.amountInCents > 0);
 
   return {
     organization,
     period,
-    chargeDate: `${period}-01`,
+    billingDay: normalizedBillingDay,
+    chargeDate: getRentRunChargeDate(period, normalizedBillingDay),
     dueDate,
     lines,
     readyCount: readyLines.length,
@@ -1824,9 +1974,9 @@ export async function postRentRun(input: PostRentRunRequest): Promise<{
     throw new Error("Rent runs must be posted inside the default organization.");
   }
 
-  const preview = await getRentRunPreview(input.period, input.dueDate);
+  const preview = await getRentRunPreview(input.period, input.dueDate, input.billingDay);
   const selectedAssignmentIds = new Set(input.assignmentIds);
-  const selectedLines = preview.lines.filter((line) => selectedAssignmentIds.has(line.assignmentId));
+  const selectedLines = preview.lines.filter((line) => selectedAssignmentIds.has(line.assignmentId) && line.amountInCents > 0);
 
   if (selectedLines.length === 0) {
     throw new Error("Choose at least one rental to post.");
@@ -1868,7 +2018,7 @@ export async function postRentRun(input: PostRentRunRequest): Promise<{
           amountInCents: normalizeReceivableAmount("charge", line.amountInCents),
           paymentMethod: null,
           reference: line.reference,
-          notes: `Posted from rent run for ${formatRentRunPeriodLabel(input.period)}.`
+          notes: `Posted from rent run for ${formatRentRunPeriodLabel(input.period)}. ${line.calculation}. Billing day ${input.billingDay}.`
         }
       });
 
@@ -1882,6 +2032,52 @@ export async function postRentRun(input: PostRentRunRequest): Promise<{
     skippedCount,
     totalInCents
   };
+}
+
+export async function listRentRunHistory(): Promise<RentRunHistoryItem[]> {
+  const organization = await getDefaultOrganization();
+  const entries = await db.receivableEntry.findMany({
+    where: {
+      organizationId: organization.id,
+      status: "POSTED",
+      reference: {
+        startsWith: "rent-run:"
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+  const history = new Map<string, RentRunHistoryItem>();
+
+  for (const entry of entries) {
+    const period = entry.reference?.split(":")[1];
+
+    if (!period) {
+      continue;
+    }
+
+    const existing = history.get(period);
+
+    if (existing) {
+      existing.count += 1;
+      existing.totalInCents += entry.amountInCents;
+      if (dateToIsoDate(entry.createdAt) > existing.postedOn) {
+        existing.postedOn = dateToIsoDate(entry.createdAt);
+      }
+      continue;
+    }
+
+    history.set(period, {
+      period,
+      periodLabel: formatRentRunPeriodLabel(period),
+      postedOn: dateToIsoDate(entry.createdAt),
+      count: 1,
+      totalInCents: entry.amountInCents
+    });
+  }
+
+  return Array.from(history.values()).sort((left, right) => right.period.localeCompare(left.period));
 }
 
 export async function listDocumentTemplates(): Promise<DocumentTemplate[]> {
@@ -2070,7 +2266,7 @@ export async function getGeneratedDocumentDetail(documentId: string): Promise<Ge
   };
 }
 
-export async function createGeneratedDocument(input: CreateGeneratedDocumentRequest): Promise<GeneratedDocument> {
+export async function previewGeneratedDocument(input: CreateGeneratedDocumentRequest): Promise<GeneratedDocumentDraft> {
   const organization = await getDefaultOrganization();
 
   if (input.organizationId !== organization.id) {
@@ -2161,18 +2357,74 @@ export async function createGeneratedDocument(input: CreateGeneratedDocumentRequ
   const title =
     input.title?.trim() ||
     `${template.name}${customer.name ? ` - ${customer.name}` : ""}`;
+
+  return {
+    templateId: template.id,
+    customerId: customer.id,
+    assignmentId: assignment?.id ?? undefined,
+    assetId: asset?.id ?? undefined,
+    type: prismaDocumentTemplateTypeToDomain(template.type),
+    title,
+    subject: renderTemplateText(template.subject, values) ?? undefined,
+    body: renderTemplateText(template.body, values) ?? "",
+    recipientEmail: customer.email ?? undefined,
+    customerName: customer.name,
+    assetCode: asset?.assetCode ?? undefined
+  };
+}
+
+export async function createGeneratedDocument(input: CreateGeneratedDocumentRequest): Promise<GeneratedDocument> {
+  const organization = await getDefaultOrganization();
+  const draft = await previewGeneratedDocument(input);
+
   const document = await db.generatedDocument.create({
     data: {
       organizationId: organization.id,
-      templateId: template.id,
-      customerId: customer.id,
-      assignmentId: assignment?.id ?? null,
-      assetId: asset?.id ?? null,
-      type: template.type,
-      title,
-      subject: renderTemplateText(template.subject, values),
-      body: renderTemplateText(template.body, values) ?? "",
-      recipientEmail: customer.email
+      templateId: normalizeNullableString(draft.templateId),
+      customerId: draft.customerId,
+      assignmentId: normalizeNullableString(draft.assignmentId),
+      assetId: normalizeNullableString(draft.assetId),
+      type: domainDocumentTemplateTypeToPrisma(draft.type),
+      title: draft.title,
+      subject: normalizeNullableString(draft.subject),
+      body: draft.body,
+      recipientEmail: normalizeNullableString(draft.recipientEmail)
+    }
+  });
+
+  return serializeGeneratedDocument(document);
+}
+
+export async function saveGeneratedDocumentDraft(input: SaveGeneratedDocumentDraftRequest): Promise<GeneratedDocument> {
+  const organization = await getDefaultOrganization();
+
+  if (input.organizationId !== organization.id) {
+    throw new Error("Documents must be saved inside the default organization.");
+  }
+
+  const customer = await db.customer.findFirst({
+    where: {
+      id: input.customerId,
+      organizationId: organization.id
+    }
+  });
+
+  if (!customer) {
+    throw new Error("Customer not found.");
+  }
+
+  const document = await db.generatedDocument.create({
+    data: {
+      organizationId: organization.id,
+      templateId: normalizeNullableString(input.templateId),
+      customerId: input.customerId,
+      assignmentId: normalizeNullableString(input.assignmentId),
+      assetId: normalizeNullableString(input.assetId),
+      type: domainDocumentTemplateTypeToPrisma(input.type),
+      title: input.title,
+      subject: normalizeNullableString(input.subject),
+      body: input.body,
+      recipientEmail: normalizeNullableString(input.recipientEmail)
     }
   });
 

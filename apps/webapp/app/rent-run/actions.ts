@@ -11,6 +11,7 @@ import {
 } from "../../src/server/registry-data";
 import {
   flattenFieldErrors,
+  getIntegerFormValue,
   getRequiredFormValue
 } from "../../src/server/form-state";
 
@@ -29,6 +30,7 @@ export async function postRentRunAction(formData: FormData): Promise<void> {
     organizationId: organization.id,
     period,
     dueDate,
+    billingDay: getIntegerFormValue(formData, "billingDay"),
     assignmentIds: getAssignmentIds(formData)
   };
   const result = postRentRunSchema.safeParse(payload);
@@ -36,7 +38,7 @@ export async function postRentRunAction(formData: FormData): Promise<void> {
   if (!result.success) {
     const fieldErrors = flattenFieldErrors(result.error.flatten().fieldErrors);
     const message = encodeURIComponent(Object.values(fieldErrors ?? {})[0] ?? "Rent run details need attention.");
-    redirect(`${registryWebRoutes.rentRun}?period=${period}&dueDate=${dueDate}&error=${message}`);
+    redirect(`${registryWebRoutes.rentRun}?period=${period}&dueDate=${dueDate}&billingDay=${payload.billingDay}&error=${message}`);
   }
 
   let postedCount = 0;
@@ -48,7 +50,7 @@ export async function postRentRunAction(formData: FormData): Promise<void> {
     skippedCount = postResult.skippedCount;
   } catch (error) {
     const message = encodeURIComponent(error instanceof Error ? error.message : "Rent run could not be posted.");
-    redirect(`${registryWebRoutes.rentRun}?period=${period}&dueDate=${dueDate}&error=${message}`);
+    redirect(`${registryWebRoutes.rentRun}?period=${period}&dueDate=${dueDate}&billingDay=${payload.billingDay}&error=${message}`);
   }
 
   revalidatePath(registryWebRoutes.dashboard);
@@ -63,6 +65,6 @@ export async function postRentRunAction(formData: FormData): Promise<void> {
   }
 
   redirect(
-    `${registryWebRoutes.rentRun}?period=${period}&dueDate=${dueDate}&posted=${postedCount}&skipped=${skippedCount}`
+    `${registryWebRoutes.rentRun}?period=${period}&dueDate=${dueDate}&billingDay=${payload.billingDay}&posted=${postedCount}&skipped=${skippedCount}`
   );
 }

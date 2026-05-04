@@ -806,7 +806,7 @@ a {
 
 .rent-run-controls {
   display: grid;
-  grid-template-columns: minmax(180px, 240px) minmax(180px, 240px) auto;
+  grid-template-columns: minmax(180px, 240px) minmax(120px, 160px) minmax(180px, 240px) auto;
   gap: 16px;
   align-items: end;
 }
@@ -820,6 +820,13 @@ a {
   background: rgba(255, 255, 255, 0.72);
   color: var(--rg-color-muted);
   font: 0.85rem/1.5 var(--rg-font-mono), monospace;
+}
+
+.import-workspace,
+.import-issue-list,
+.import-commit-form {
+  display: grid;
+  gap: 16px;
 }
 
 .report-row {
