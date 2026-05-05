@@ -15,10 +15,27 @@ export default async function ImportsPage() {
         <p className="eyebrow">Imports</p>
         <h1>Total Recall cutover prep</h1>
         <p className="hero-card__summary">
-          Registry is prepared for real customer, unit, active-rental, and opening-balance imports. These blank CSV
-          layouts define the expected fields without adding sample business records.
+          Registry is prepared for real customer, unit, active-rental, opening-balance, and payment-history imports.
+          These blank CSV layouts define the expected fields without adding sample business records.
         </p>
       </div>
+
+      <article className="panel-card panel-card--soft">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Cutover Order</p>
+            <h2>Recommended import sequence</h2>
+          </div>
+        </div>
+        <div className="document-step-grid">
+          {["Customers", "Container units", "Active rentals", "Opening balances", "Payment history"].map((step, index) => (
+            <article className="document-step" key={step}>
+              <strong>{index + 1}</strong>
+              <span>{step}</span>
+            </article>
+          ))}
+        </div>
+      </article>
 
       <ImportWorkspace specs={registryImportSpecs} />
 

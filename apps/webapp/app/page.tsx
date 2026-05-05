@@ -59,6 +59,29 @@ export default async function DashboardPage() {
         ))}
       </div>
 
+      <section className="panel-card panel-card--soft">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Demo Path</p>
+            <h2>Office workflow to review</h2>
+          </div>
+        </div>
+        <div className="document-step-grid">
+          {[
+            "Add or open a customer",
+            "Confirm a container unit",
+            "Start or review the rental",
+            "Post charge or payment",
+            "Create paperwork"
+          ].map((step, index) => (
+            <article className="document-step" key={step}>
+              <strong>{index + 1}</strong>
+              <span>{step}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <div className="overview-grid">
         <section className="panel-card">
           <div className="section-heading">

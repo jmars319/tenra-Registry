@@ -265,8 +265,18 @@ async function main() {
       name: "Standard container rental agreement",
       subject: "Container rental agreement for {{customer.name}}",
       body:
-        "Customer: {{customer.name}}\nUnit: {{unit.assetCode}}\nSite: {{rental.siteAddress}}\nRate: {{rental.rate}}\n\nBusiness-approved rental terms go here.",
-      mergeFields: ["customer.name", "unit.assetCode", "rental.siteAddress", "rental.rate"]
+        "{{organization.name}}\n\nRental agreement\n\nCustomer: {{customer.name}}\nPhone: {{customer.phone}}\nUnit: {{unit.assetCode}} {{unit.size}}\nStart date: {{rental.startDate}}\nRate: {{rental.rate}}\nRental site:\n{{rental.siteAddress}}\n\nPlacement notes:\n{{rental.placementNotes}}\n\nThe customer agrees to rent the listed portable storage container at the stated rate. The customer is responsible for access to the site, ordinary care of the unit while rented, and payment of posted charges. Any special terms can be added here before printing or emailing.\n\nCustomer signature: ______________________________\nDate: ____________________",
+      mergeFields: [
+        "organization.name",
+        "customer.name",
+        "customer.phone",
+        "unit.assetCode",
+        "unit.size",
+        "rental.startDate",
+        "rental.rate",
+        "rental.siteAddress",
+        "rental.placementNotes"
+      ]
     },
     {
       id: `seed-template-delivery-${organization.id}`,
@@ -274,8 +284,26 @@ async function main() {
       name: "Container delivery ticket",
       subject: "Delivery ticket for {{unit.assetCode}}",
       body:
-        "Deliver {{unit.assetCode}} to {{rental.siteAddress}}.\nPlacement notes: {{rental.placementNotes}}\nDriver notes: ____________________",
+        "Delivery ticket\n\nCustomer: {{customer.name}}\nUnit: {{unit.assetCode}} {{unit.size}}\nDelivery site:\n{{rental.siteAddress}}\n\nPlacement notes:\n{{rental.placementNotes}}\n\nDriver notes:\n\nDelivered by: ______________________________\nCustomer signature: ______________________________\nDate: ____________________",
+      mergeFields: ["customer.name", "unit.assetCode", "unit.size", "rental.siteAddress", "rental.placementNotes"]
+    },
+    {
+      id: `seed-template-pickup-${organization.id}`,
+      type: "PICKUP_TICKET",
+      name: "Container pickup ticket",
+      subject: "Pickup ticket for {{unit.assetCode}}",
+      body:
+        "Pickup ticket\n\nCustomer: {{customer.name}}\nUnit: {{unit.assetCode}}\nPickup site:\n{{rental.siteAddress}}\n\nSite and access notes:\n{{rental.placementNotes}}\n\nCondition at pickup:\n\nDriver notes:\n\nPicked up by: ______________________________\nDate: ____________________",
       mergeFields: ["unit.assetCode", "rental.siteAddress", "rental.placementNotes"]
+    },
+    {
+      id: `seed-template-condition-${organization.id}`,
+      type: "CONDITION_REPORT",
+      name: "Container condition report",
+      subject: "Condition report for {{unit.assetCode}}",
+      body:
+        "Condition report\n\nCustomer: {{customer.name}}\nUnit: {{unit.assetCode}}\nRecorded condition: {{unit.condition}}\nLocation:\n{{rental.siteAddress}}\n\nExterior condition:\n\nInterior condition:\n\nDoor and lock condition:\n\nPhotos attached: Yes / No\n\nReviewed by: ______________________________\nDate: ____________________",
+      mergeFields: ["customer.name", "unit.assetCode", "unit.condition", "rental.siteAddress"]
     },
     {
       id: `seed-template-receipt-${organization.id}`,
@@ -283,8 +311,35 @@ async function main() {
       name: "Payment receipt",
       subject: "Payment receipt from {{organization.name}}",
       body:
-        "Received from {{customer.name}}: {{payment.amount}}\nReference: {{payment.reference}}\nRemaining balance: {{balance.amount}}",
+        "{{organization.name}}\n\nPayment receipt\n\nReceived from: {{customer.name}}\nAmount: {{payment.amount}}\nReference: {{payment.reference}}\nRemaining balance: {{balance.amount}}\n\nReceived by: ______________________________\nDate: ____________________",
       mergeFields: ["customer.name", "payment.amount", "payment.reference", "balance.amount"]
+    },
+    {
+      id: `seed-template-past-due-${organization.id}`,
+      type: "PAST_DUE_NOTICE",
+      name: "Past-due balance notice",
+      subject: "Past-due balance for {{customer.name}}",
+      body:
+        "{{organization.name}}\n\nPast-due balance notice\n\nCustomer: {{customer.name}}\nUnit: {{unit.assetCode}}\nCurrent balance: {{balance.amount}}\nPast due: {{balance.pastDue}}\n\nPlease contact the office to bring the account current or confirm payment arrangements.\n\nOffice notes:\n\nThank you.",
+      mergeFields: ["organization.name", "customer.name", "unit.assetCode", "balance.amount", "balance.pastDue"]
+    },
+    {
+      id: `seed-template-deposit-${organization.id}`,
+      type: "DEPOSIT_RECEIPT",
+      name: "Deposit receipt",
+      subject: "Deposit receipt from {{organization.name}}",
+      body:
+        "{{organization.name}}\n\nDeposit receipt\n\nReceived from: {{customer.name}}\nAmount: {{payment.amount}}\nReference: {{payment.reference}}\nRemaining balance: {{balance.amount}}\n\nReceived by: ______________________________\nDate: ____________________",
+      mergeFields: ["organization.name", "customer.name", "payment.amount", "payment.reference", "balance.amount"]
+    },
+    {
+      id: `seed-template-letter-${organization.id}`,
+      type: "GENERAL_LETTER",
+      name: "Customer letter",
+      subject: "Message from {{organization.name}}",
+      body:
+        "{{organization.name}}\n\nTo: {{customer.name}}\n{{customer.companyName}}\n\nRe: {{unit.assetCode}}\n\nWrite the office message here.\n\nCurrent balance: {{balance.amount}}\n\nThank you.",
+      mergeFields: ["organization.name", "customer.name", "customer.companyName", "unit.assetCode", "balance.amount"]
     }
   ];
 

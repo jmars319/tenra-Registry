@@ -90,6 +90,24 @@ export const registryImportSpecs: RegistryImportSpec[] = [
       { key: "reference", required: false, notes: "Check number, receipt number, or prior-system reference." },
       { key: "notes", required: false, notes: "Office notes to carry forward." }
     ]
+  },
+  {
+    key: "payment-history",
+    title: "Payment History",
+    fileName: "registry-payment-history.csv",
+    purpose: "Historical customer payments and credits that should be visible after cutover.",
+    fields: [
+      { key: "payment_code", required: true, notes: "Stable payment row ID from the source export." },
+      { key: "customer_code", required: true, notes: "Must match customers.customer_code." },
+      { key: "rental_code", required: false, notes: "Use when the payment belongs to a specific rental." },
+      { key: "unit_code", required: false, notes: "Use when the payment belongs to a specific unit." },
+      { key: "received_date", required: true, notes: "YYYY-MM-DD." },
+      { key: "amount", required: true, notes: "Dollar amount received." },
+      { key: "payment_method", required: false, notes: "Cash, check, card, ACH, or office label." },
+      { key: "reference", required: false, notes: "Check number, receipt number, or prior-system reference." },
+      { key: "description", required: false, notes: "Readable ledger description. Defaults to Payment received." },
+      { key: "notes", required: false, notes: "Office notes to carry forward." }
+    ]
   }
 ] as const;
 

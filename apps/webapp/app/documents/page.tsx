@@ -19,6 +19,18 @@ const quickSteps = [
   "Print or open an email draft"
 ] as const;
 
+const officeDocumentSet = [
+  "Rental agreement",
+  "Delivery ticket",
+  "Pickup ticket",
+  "Condition report",
+  "Payment receipt",
+  "Account statement",
+  "Past-due notice",
+  "Deposit receipt",
+  "General letter"
+] as const;
+
 export default async function DocumentsPage() {
   const [options, documents] = await Promise.all([getDocumentFormOptions(), listGeneratedDocuments()]);
 
@@ -41,6 +53,22 @@ export default async function DocumentsPage() {
           </article>
         ))}
       </div>
+
+      <article className="panel-card panel-card--soft">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Office Set</p>
+            <h2>Paperwork Registry should cover</h2>
+          </div>
+        </div>
+        <div className="tag-list">
+          {officeDocumentSet.map((documentName) => (
+            <span className="tag" key={documentName}>
+              {documentName}
+            </span>
+          ))}
+        </div>
+      </article>
 
       <div className="workspace-grid">
         <div className="panel-stack">

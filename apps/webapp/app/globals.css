@@ -824,9 +824,22 @@ a {
 
 .import-workspace,
 .import-issue-list,
-.import-commit-form {
+.import-commit-form,
+.settings-grid,
+.settings-list {
   display: grid;
   gap: 16px;
+}
+
+.settings-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-list {
+  margin: 16px 0 0;
+  padding-left: 1.1rem;
+  color: var(--rg-color-muted);
+  line-height: 1.55;
 }
 
 .report-row {
@@ -856,6 +869,7 @@ a {
   .module-grid,
   .placeholder-grid,
   .overview-grid,
+  .settings-grid,
   .workspace-grid,
   .detail-grid,
   .rent-run-controls,

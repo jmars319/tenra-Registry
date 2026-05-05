@@ -10,7 +10,7 @@ import {
 } from "./import-specs";
 import { getDefaultOrganization } from "./registry-data";
 
-export type ImportDatasetKey = "customers" | "units" | "rentals" | "opening-balances";
+export type ImportDatasetKey = "customers" | "units" | "rentals" | "opening-balances" | "payment-history";
 export type ImportPayloads = Partial<Record<ImportDatasetKey, string>>;
 
 export interface ImportIssue {
@@ -107,15 +107,29 @@ interface OpeningBalanceImportRow {
   notes?: string | undefined;
 }
 
+interface PaymentHistoryImportRow {
+  paymentCode: string;
+  customerCode: string;
+  rentalCode?: string | undefined;
+  unitCode?: string | undefined;
+  receivedDate: string;
+  amountInCents: number;
+  paymentMethod?: string | undefined;
+  reference?: string | undefined;
+  description: string;
+  notes?: string | undefined;
+}
+
 interface NormalizedImport {
   customers: CustomerImportRow[];
   units: UnitImportRow[];
   rentals: RentalImportRow[];
   openingBalances: OpeningBalanceImportRow[];
+  paymentHistory: PaymentHistoryImportRow[];
   issues: ImportIssue[];
 }
 
-const datasetKeys = ["customers", "units", "rentals", "opening-balances"] as const satisfies readonly ImportDatasetKey[];
+const datasetKeys = ["customers", "units", "rentals", "opening-balances", "payment-history"] as const satisfies readonly ImportDatasetKey[];
 const datePattern = /^\d{4}-\d{2}-\d{2}$/u;
 const allowedAssetStatuses = new Set<AssetStatus>(["available", "assigned", "maintenance", "archived"]);
 const allowedCadences = new Set<BillingCadence>(["daily", "weekly", "monthly", "custom"]);
@@ -502,6 +516,56 @@ function parseOpeningBalances(rows: Array<Record<string, string>>, issues: Impor
   });
 }
 
+function parsePaymentHistory(rows: Array<Record<string, string>>, issues: ImportIssue[]): PaymentHistoryImportRow[] {
+  validateUniqueCodes(issues, "payment-history", rows, "payment_code");
+
+  return rows.flatMap((row, index) => {
+    const rowNumber = index + 2;
+    const paymentCode = normalizeCell(row.payment_code);
+    const customerCode = normalizeCell(row.customer_code);
+    const receivedDate = normalizeCell(row.received_date);
+    const amountInCents = parseCurrency(row.amount);
+
+    for (const field of ["payment_code", "customer_code", "received_date", "amount"]) {
+      if (!normalizeCell(row[field])) {
+        addRequiredIssue(issues, "payment-history", rowNumber, field);
+      }
+    }
+    if (receivedDate && !datePattern.test(receivedDate)) {
+      issues.push({
+        dataset: "payment-history",
+        field: "received_date",
+        row: rowNumber,
+        message: "received_date must be YYYY-MM-DD."
+      });
+    }
+    if (amountInCents === null) {
+      issues.push({
+        dataset: "payment-history",
+        field: "amount",
+        row: rowNumber,
+        message: "amount must be a dollar amount."
+      });
+    }
+    if (!paymentCode || !customerCode || !receivedDate || !datePattern.test(receivedDate) || amountInCents === null) {
+      return [];
+    }
+
+    return [{
+      paymentCode,
+      customerCode,
+      rentalCode: normalizeCell(row.rental_code),
+      unitCode: normalizeCell(row.unit_code),
+      receivedDate,
+      amountInCents,
+      paymentMethod: normalizeCell(row.payment_method),
+      reference: normalizeCell(row.reference),
+      description: normalizeCell(row.description) ?? "Payment received",
+      notes: normalizeCell(row.notes)
+    }];
+  });
+}
+
 function normalizeImport(payloads: ImportPayloads): NormalizedImport {
   const issues: ImportIssue[] = [];
   const parsedTables = new Map<ImportDatasetKey, CsvTable>();
@@ -528,6 +592,7 @@ function normalizeImport(payloads: ImportPayloads): NormalizedImport {
     units: parseUnits(parsedTables.get("units")?.rows ?? [], issues),
     rentals: parseRentals(parsedTables.get("rentals")?.rows ?? [], issues),
     openingBalances: parseOpeningBalances(parsedTables.get("opening-balances")?.rows ?? [], issues),
+    paymentHistory: parsePaymentHistory(parsedTables.get("payment-history")?.rows ?? [], issues),
     issues
   };
 }
@@ -594,12 +659,15 @@ async function addExistingRecordIssues(normalized: NormalizedImport, organizatio
           }
         })
       : [],
-    normalized.openingBalances.length > 0
+    normalized.openingBalances.length > 0 || normalized.paymentHistory.length > 0
       ? db.receivableEntry.findMany({
           where: {
             organizationId,
             externalCode: {
-              in: normalized.openingBalances.map((row) => row.entryCode)
+              in: [
+                ...normalized.openingBalances.map((row) => row.entryCode),
+                ...normalized.paymentHistory.map((row) => row.paymentCode)
+              ]
             }
           },
           select: {
@@ -649,6 +717,15 @@ async function addExistingRecordIssues(normalized: NormalizedImport, organizatio
       });
     }
   });
+  normalized.paymentHistory.forEach((row) => {
+    if (existingEntries.has(row.paymentCode)) {
+      normalized.issues.push({
+        dataset: "payment-history",
+        field: "payment_code",
+        message: `Payment ${row.paymentCode} already exists.`
+      });
+    }
+  });
 }
 
 async function addCrossReferenceIssues(normalized: NormalizedImport, organizationId: string): Promise<void> {
@@ -656,16 +733,24 @@ async function addCrossReferenceIssues(normalized: NormalizedImport, organizatio
   const fileUnitCodes = new Set(normalized.units.map((row) => row.unitCode));
   const fileRentalCodes = new Set(normalized.rentals.map((row) => row.rentalCode));
   const neededCustomerCodes = Array.from(
-    new Set([...normalized.rentals.map((row) => row.customerCode), ...normalized.openingBalances.map((row) => row.customerCode)])
+    new Set([
+      ...normalized.rentals.map((row) => row.customerCode),
+      ...normalized.openingBalances.map((row) => row.customerCode),
+      ...normalized.paymentHistory.map((row) => row.customerCode)
+    ])
   ).filter((code) => !fileCustomerCodes.has(code));
   const neededUnitCodes = Array.from(
     new Set([
       ...normalized.rentals.map((row) => row.unitCode),
-      ...normalized.openingBalances.map((row) => row.unitCode).filter((code): code is string => Boolean(code))
+      ...normalized.openingBalances.map((row) => row.unitCode).filter((code): code is string => Boolean(code)),
+      ...normalized.paymentHistory.map((row) => row.unitCode).filter((code): code is string => Boolean(code))
     ])
   ).filter((code) => !fileUnitCodes.has(code));
   const neededRentalCodes = Array.from(
-    new Set(normalized.openingBalances.map((row) => row.rentalCode).filter((code): code is string => Boolean(code)))
+    new Set([
+      ...normalized.openingBalances.map((row) => row.rentalCode).filter((code): code is string => Boolean(code)),
+      ...normalized.paymentHistory.map((row) => row.rentalCode).filter((code): code is string => Boolean(code))
+    ])
   ).filter((code) => !fileRentalCodes.has(code));
   const [existingCustomers, existingUnits, existingRentals] = await Promise.all([
     neededCustomerCodes.length > 0
@@ -761,6 +846,29 @@ async function addCrossReferenceIssues(normalized: NormalizedImport, organizatio
       });
     }
   });
+  normalized.paymentHistory.forEach((row) => {
+    if (!customerCodes.has(row.customerCode)) {
+      normalized.issues.push({
+        dataset: "payment-history",
+        field: "customer_code",
+        message: `Customer ${row.customerCode} was not found in the files or existing Registry records.`
+      });
+    }
+    if (row.unitCode && !unitCodes.has(row.unitCode)) {
+      normalized.issues.push({
+        dataset: "payment-history",
+        field: "unit_code",
+        message: `Unit ${row.unitCode} was not found in the files or existing Registry records.`
+      });
+    }
+    if (row.rentalCode && !rentalCodes.has(row.rentalCode)) {
+      normalized.issues.push({
+        dataset: "payment-history",
+        field: "rental_code",
+        message: `Rental ${row.rentalCode} was not found in the files or existing Registry records.`
+      });
+    }
+  });
 }
 
 export async function dryRunRegistryImport(payloads: ImportPayloads): Promise<ImportDryRunResult> {
@@ -774,7 +882,8 @@ export async function dryRunRegistryImport(payloads: ImportPayloads): Promise<Im
     getDatasetPreview("customers", normalized.customers.length),
     getDatasetPreview("units", normalized.units.length),
     getDatasetPreview("rentals", normalized.rentals.length),
-    getDatasetPreview("opening-balances", normalized.openingBalances.length)
+    getDatasetPreview("opening-balances", normalized.openingBalances.length),
+    getDatasetPreview("payment-history", normalized.paymentHistory.length)
   ].filter((dataset) => dataset.rowCount > 0);
   const totalRows = datasets.reduce((total, dataset) => total + dataset.rowCount, 0);
 
@@ -798,7 +907,8 @@ function getSummary(normalized: NormalizedImport): Record<string, number> {
     customers: normalized.customers.length,
     units: normalized.units.length,
     rentals: normalized.rentals.length,
-    openingBalances: normalized.openingBalances.length
+    openingBalances: normalized.openingBalances.length,
+    paymentHistory: normalized.paymentHistory.length
   };
 }
 
@@ -1012,6 +1122,39 @@ export async function executeRegistryImport(payloads: ImportPayloads): Promise<I
           batchId: importBatch.id,
           dataset: "opening-balances",
           sourceKey: row.entryCode,
+          targetModel: "ReceivableEntry",
+          targetId: entry.id
+        }
+      });
+    }
+
+    for (const row of normalized.paymentHistory) {
+      const customerId = await findCustomerId(transaction, organization.id, row.customerCode);
+      const assetId = row.unitCode ? await findAssetId(transaction, organization.id, row.unitCode) : null;
+      const assignmentId = row.rentalCode ? await findAssignmentId(transaction, organization.id, row.rentalCode) : null;
+      const entry = await transaction.receivableEntry.create({
+        data: {
+          organizationId: organization.id,
+          externalCode: row.paymentCode,
+          customerId,
+          assignmentId,
+          assetId,
+          type: "PAYMENT",
+          status: "POSTED",
+          description: row.description,
+          effectiveDate: parseDateOnly(row.receivedDate),
+          dueDate: null,
+          amountInCents: normalizeReceivableAmount("payment", row.amountInCents),
+          paymentMethod: row.paymentMethod ?? null,
+          reference: row.reference ?? row.paymentCode,
+          notes: row.notes ?? "Imported payment history."
+        }
+      });
+      await transaction.importRecord.create({
+        data: {
+          batchId: importBatch.id,
+          dataset: "payment-history",
+          sourceKey: row.paymentCode,
           targetModel: "ReceivableEntry",
           targetId: entry.id
         }

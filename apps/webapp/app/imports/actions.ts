@@ -19,7 +19,7 @@ export interface ImportActionState {
   importBatchId?: string | undefined;
 }
 
-const datasetKeys = ["customers", "units", "rentals", "opening-balances"] as const satisfies readonly ImportDatasetKey[];
+const datasetKeys = ["customers", "units", "rentals", "opening-balances", "payment-history"] as const satisfies readonly ImportDatasetKey[];
 
 async function readFileText(formData: FormData, dataset: ImportDatasetKey): Promise<string | undefined> {
   const file = formData.get(`${dataset}File`);
