@@ -23,6 +23,7 @@
     "appId": "co.tenra.registry.desktop",
     "productName": "tenra Registry",
     "directories": {
+      "buildResources": "assets",
       "output": "../../dist/desktop"
     },
     "files": [
@@ -31,6 +32,7 @@
     ],
     "asar": false,
     "mac": {
+      "icon": "icon.icns",
       "category": "public.app-category.business",
       "target": [
         "dir"
