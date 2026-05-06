@@ -29,6 +29,7 @@
     "verify:desktop": "pnpm --filter @registry/desktopapp verify",
     "verify:mobile": "pnpm --filter @registry/mobileapp verify",
     "verify:handoffs": "node ./scripts/validate-handoffs.mjs",
+    "verify:replay": "node ./scripts/verify-handoff-replay.mjs",
     "suite:smoke": "node ./scripts/suite-smoke.mjs",
     "verify:all": "pnpm verify:web && pnpm verify:desktop && pnpm verify:mobile",
     "doctor": "node ./scripts/doctor.mjs"

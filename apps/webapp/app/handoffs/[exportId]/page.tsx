@@ -204,6 +204,51 @@ export default async function HandoffDetailPage({ params }: Params) {
       <article className="panel-card">
         <div className="section-heading">
           <div>
+            <p className="eyebrow">Replay delivery</p>
+            <h2>Post current payload to {audit.targetApp}</h2>
+          </div>
+          <span className="pill">direct POST</span>
+        </div>
+        <p className="table-subcopy">
+          Paste a local Ledger or Assembly intake endpoint to replay this handoff through an explicit API call. Leaving
+          the endpoint blank returns the regenerated JSON fallback.
+        </p>
+        <form
+          action={`/api/handoffs/replay/${encodeURIComponent(audit.exportId)}`}
+          className="form-grid two"
+          method="post"
+        >
+          <label className="field-stack">
+            <span>{audit.targetApp === "ledger" ? "Ledger import endpoint" : "Assembly import endpoint"}</span>
+            <input
+              className="form-input"
+              name="endpoint"
+              placeholder={
+                audit.targetApp === "ledger"
+                  ? "http://localhost:4174/api/handoffs/registry-ledger"
+                  : "http://localhost:3000/api/handoffs/registry-document"
+              }
+            />
+          </label>
+          <label className="field-stack">
+            <span>Delivery note</span>
+            <input
+              className="form-input"
+              name="message"
+              placeholder={`Replay delivered to ${audit.targetApp}`}
+            />
+          </label>
+          <div className="actions-row">
+            <button className="button-secondary" type="submit">
+              Replay POST
+            </button>
+          </div>
+        </form>
+      </article>
+
+      <article className="panel-card">
+        <div className="section-heading">
+          <div>
             <p className="eyebrow">Diff</p>
             <h2>Recorded summary vs current replay</h2>
           </div>

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -14,8 +15,28 @@ const repos = {
   scout: "tenra Scout",
   partition: "tenra Partition",
   guardrail: "tenra Guardrail",
+  align: "tenra Align",
+  facet: "tenra Facet",
+  derive: "tenra Derive",
+  sentinel: "tenra Sentinel",
   vicina: "Vicina by tenra"
 };
+
+const verifierScripts = [
+  { repo: "registry", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "ledger", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "assembly", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "proxy", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "scout", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "partition", command: "npm", args: ["run", "verify:handoffs"] },
+  { repo: "guardrail", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "align", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "facet", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "derive", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "sentinel", command: "pnpm", args: ["run", "verify:handoffs"] },
+  { repo: "sentinel", command: "pnpm", args: ["run", "verify:derive-roundtrip"] },
+  { repo: "vicina", command: "pnpm", args: ["run", "verify:handoffs"] }
+];
 
 function readJson(relativePath) {
   const fullPath = path.join(suiteRoot, relativePath);
@@ -35,6 +56,20 @@ function assertRepo(name) {
   const relative = repos[name];
   assert(relative, `Unknown repo key ${name}`);
   assert(fs.existsSync(path.join(suiteRoot, relative, ".git")), `${relative} is not a git repo`);
+}
+
+function runLocalVerifiers() {
+  for (const verifier of verifierScripts) {
+    const repoPath = path.join(suiteRoot, repos[verifier.repo]);
+    console.log(`RUN ${repos[verifier.repo]}: ${verifier.command} ${verifier.args.join(" ")}`);
+    const result = spawnSync(verifier.command, verifier.args, {
+      cwd: repoPath,
+      stdio: "inherit"
+    });
+    if (result.status !== 0) {
+      throw new Error(`${repos[verifier.repo]} verifier failed.`);
+    }
+  }
 }
 
 const checks = [
@@ -93,8 +128,48 @@ const checks = [
       assert(vicina.schema === "tenra-vicina.workflow-handoff.v1", "Vicina workflow handoff schema mismatch");
       assert(vicina.targetApps?.includes("guardrail"), "Vicina workflow handoff does not target Guardrail");
     }
+  },
+  {
+    name: "Align -> Guardrail -> Proxy",
+    run() {
+      assertRepo("align");
+      assertRepo("guardrail");
+      assertRepo("proxy");
+      const align = readJson("tenra Align/fixtures/handoffs/review-reply-route.json");
+      assert(align.schema === "tenra-align.review-reply-route.v1", "Align review route schema mismatch");
+      assert(align.guardrailReviewRequest?.schema === "tenra-guardrail.external-action-review.v1", "Align route missing Guardrail review request");
+      assert(align.proxyShapeRequest?.clientApp === "align", "Align route missing Proxy shape request");
+    }
+  },
+  {
+    name: "Facet -> Derive -> Sentinel",
+    run() {
+      assertRepo("facet");
+      assertRepo("derive");
+      assertRepo("sentinel");
+      const facet = readJson("tenra Facet/fixtures/handoffs/orientation-packet.json");
+      const derive = readJson("tenra Derive/fixtures/handoffs/reasoning-brief.json");
+      assert(facet.schema === "tenra-facet.orientation-packet.v1", "Facet orientation schema mismatch");
+      assert(facet.handoff?.recommendedNextApp === "derive", "Facet fixture should recommend Derive");
+      assert(derive.schema === "tenra-derive.reasoning-brief.v1", "Derive reasoning brief schema mismatch");
+      assert(derive.handoff?.recommendedConsumers?.includes("sentinel"), "Derive brief should target Sentinel");
+    }
+  },
+  {
+    name: "Sentinel -> Derive -> Guardrail",
+    run() {
+      assertRepo("sentinel");
+      assertRepo("derive");
+      assertRepo("guardrail");
+      const sentinel = readJson("tenra Sentinel/fixtures/handoffs/risk-brief.json");
+      assert(sentinel.schema === "tenra-sentinel.risk-brief.v1", "Sentinel risk brief schema mismatch");
+      assert(sentinel.handoff?.recommendedConsumers?.includes("derive"), "Sentinel risk brief should target Derive");
+      assert(sentinel.handoff?.recommendedConsumers?.includes("guardrail"), "Sentinel risk brief should target Guardrail");
+    }
   }
 ];
+
+runLocalVerifiers();
 
 for (const check of checks) {
   check.run();
