@@ -99,6 +99,9 @@ export default async function ReceivablesPage() {
                   Assembly request
                 </Link>
               ) : null}
+              <Link className="button-secondary button-link" href="/handoffs">
+                Audit trail
+              </Link>
             </div>
           </article>
         </div>

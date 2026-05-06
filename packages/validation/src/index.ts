@@ -201,6 +201,7 @@ export const registryLedgerExportRowSchema = z.object({
 
 export const registryLedgerExportSchema = z.object({
   schema: z.literal("tenra-registry.ledger-export.v1"),
+  exportId: entityIdSchema,
   exportedAt: z.string().datetime({ offset: true }),
   organizationId: entityIdSchema,
   sourceApp: z.literal("registry"),
@@ -209,6 +210,7 @@ export const registryLedgerExportSchema = z.object({
 
 export const registryAssemblyDocumentRequestSchema = z.object({
   schema: z.literal("tenra-registry.assembly-document-request.v1"),
+  exportId: entityIdSchema,
   exportedAt: z.string().datetime({ offset: true }),
   sourceApp: z.literal("registry"),
   organizationId: entityIdSchema,

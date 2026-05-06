@@ -233,6 +233,7 @@ export interface RegistryLedgerExportRow {
 
 export interface RegistryLedgerExport {
   schema: "tenra-registry.ledger-export.v1";
+  exportId: EntityId;
   exportedAt: string;
   organizationId: EntityId;
   sourceApp: "registry";
@@ -248,46 +249,67 @@ export interface BuildRegistryLedgerExportInput {
   assets?: Array<Pick<Asset, "id" | "assetCode">> | undefined;
 }
 
+function stableHandoffHash(value: string): string {
+  let hash = 2166136261;
+  for (const character of value) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return (hash >>> 0).toString(36);
+}
+
+function stableRegistryExportId(prefix: string, parts: Array<string | undefined>): EntityId {
+  const seed = parts.filter((part): part is string => Boolean(part && part.trim())).join("|");
+  return `${prefix}-${stableHandoffHash(seed || prefix)}`;
+}
+
 export function buildRegistryLedgerExport(input: BuildRegistryLedgerExportInput): RegistryLedgerExport {
   const customersById = new Map(input.customers.map((customer) => [customer.id, customer]));
   const assignmentIds = new Set((input.assignments ?? []).map((assignment) => assignment.id));
   const assetsById = new Map((input.assets ?? []).map((asset) => [asset.id, asset]));
+  const rows = input.entries
+    .filter((entry) => entry.status === "posted")
+    .map((entry) => {
+      const customer = customersById.get(entry.customerId);
+      const asset = entry.assetId ? assetsById.get(entry.assetId) : undefined;
+      const rentalCode =
+        entry.assignmentId && (assignmentIds.size === 0 || assignmentIds.has(entry.assignmentId))
+          ? entry.assignmentId
+          : undefined;
+
+      return {
+        externalId: entry.id,
+        customerCode: entry.customerId,
+        customerName: customer?.name ?? entry.customerId,
+        rentalCode,
+        unitCode: asset?.assetCode,
+        entryType: entry.type,
+        effectiveDate: entry.effectiveDate,
+        description: entry.description,
+        amountMinor: entry.amountInCents,
+        paymentMethod: entry.paymentMethod,
+        reference: entry.reference,
+        notes: entry.notes
+      };
+    });
 
   return {
     schema: "tenra-registry.ledger-export.v1",
+    exportId: stableRegistryExportId("registry-ledger", [
+      input.organizationId,
+      ...rows.map((row) => row.externalId).sort()
+    ]),
     exportedAt: input.exportedAt ?? new Date().toISOString(),
     organizationId: input.organizationId,
     sourceApp: "registry",
-    rows: input.entries
-      .filter((entry) => entry.status === "posted")
-      .map((entry) => {
-        const customer = customersById.get(entry.customerId);
-        const asset = entry.assetId ? assetsById.get(entry.assetId) : undefined;
-        const rentalCode =
-          entry.assignmentId && (assignmentIds.size === 0 || assignmentIds.has(entry.assignmentId))
-            ? entry.assignmentId
-            : undefined;
-
-        return {
-          externalId: entry.id,
-          customerCode: entry.customerId,
-          customerName: customer?.name ?? entry.customerId,
-          rentalCode,
-          unitCode: asset?.assetCode,
-          entryType: entry.type,
-          effectiveDate: entry.effectiveDate,
-          description: entry.description,
-          amountMinor: entry.amountInCents,
-          paymentMethod: entry.paymentMethod,
-          reference: entry.reference,
-          notes: entry.notes
-        };
-      })
+    rows
   };
 }
 
 export interface RegistryAssemblyDocumentRequest {
   schema: "tenra-registry.assembly-document-request.v1";
+  exportId: EntityId;
   exportedAt: string;
   sourceApp: "registry";
   organizationId: EntityId;
@@ -385,6 +407,13 @@ export function buildRegistryAssemblyDocumentRequest(
 
   return {
     schema: "tenra-registry.assembly-document-request.v1",
+    exportId: stableRegistryExportId("registry-assembly", [
+      input.organizationId,
+      input.customer.id,
+      assignment?.id,
+      documentType,
+      desiredOutput
+    ]),
     exportedAt: input.exportedAt ?? new Date().toISOString(),
     sourceApp: "registry",
     organizationId: input.organizationId,

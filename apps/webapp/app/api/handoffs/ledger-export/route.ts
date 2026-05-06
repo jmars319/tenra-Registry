@@ -6,7 +6,8 @@ import {
   listAssets,
   listAssignments,
   listCustomers,
-  listReceivableEntries
+  listReceivableEntries,
+  recordHandoffAudit
 } from "../../../../src/server/registry-data";
 
 export const dynamic = "force-dynamic";
@@ -29,10 +30,21 @@ export async function GET() {
         assets
       })
     );
+    await recordHandoffAudit({
+      organizationId: organization.id,
+      exportId: payload.exportId,
+      schema: payload.schema,
+      targetApp: "ledger",
+      rowCount: payload.rows.length,
+      payloadSummary: {
+        exportedAt: payload.exportedAt,
+        totalMinor: payload.rows.reduce((sum, row) => sum + row.amountMinor, 0)
+      }
+    });
 
     return NextResponse.json(payload, {
       headers: {
-        "Content-Disposition": `attachment; filename="registry-ledger-export-${new Date()
+        "Content-Disposition": `attachment; filename="${payload.exportId}-${new Date()
           .toISOString()
           .slice(0, 10)}.json"`
       }

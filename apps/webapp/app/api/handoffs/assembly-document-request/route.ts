@@ -6,7 +6,8 @@ import {
   listAssets,
   listAssignments,
   listCustomers,
-  listReceivableEntries
+  listReceivableEntries,
+  recordHandoffAudit
 } from "../../../../src/server/registry-data";
 
 export const dynamic = "force-dynamic";
@@ -45,10 +46,24 @@ export async function GET(request: Request) {
         desiredOutput: customer.pastDueInCents > 0 ? "notice" : "statement"
       })
     );
+    await recordHandoffAudit({
+      organizationId: organization.id,
+      exportId: payload.exportId,
+      schema: payload.schema,
+      targetApp: "assembly",
+      subjectId: customer.id,
+      rowCount: 1,
+      payloadSummary: {
+        exportedAt: payload.exportedAt,
+        customerName: customer.name,
+        documentType: payload.documentType,
+        desiredOutput: payload.desiredOutput
+      }
+    });
 
     return NextResponse.json(payload, {
       headers: {
-        "Content-Disposition": `attachment; filename="registry-assembly-document-${customer.id}-${new Date()
+        "Content-Disposition": `attachment; filename="${payload.exportId}-${new Date()
           .toISOString()
           .slice(0, 10)}.json"`
       }

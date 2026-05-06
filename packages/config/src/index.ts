@@ -13,6 +13,7 @@ export const registryWebRoutes = {
   rentRun: "/rent-run",
   documents: "/documents",
   imports: "/imports",
+  handoffs: "/handoffs",
   invoices: "/invoices",
   reports: "/reports",
   settings: "/settings"
@@ -72,6 +73,12 @@ export const registryModules = [
     title: "Imports",
     description: "Prepared CSV layouts for customers, units, rentals, and opening balances.",
     href: registryWebRoutes.imports
+  },
+  {
+    key: "handoffs",
+    title: "Handoffs",
+    description: "Persistent export audit for Ledger and Assembly handoff downloads.",
+    href: registryWebRoutes.handoffs
   },
   {
     key: "reports",

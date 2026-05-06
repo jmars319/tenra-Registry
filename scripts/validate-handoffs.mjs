@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const fixtureDir = path.resolve("fixtures/handoffs");
+const registryDocCheck = spawnSync(process.execPath, ["scripts/generate-handoff-registry.mjs", "--check"], {
+  stdio: "inherit"
+});
+if (registryDocCheck.status !== 0) process.exit(registryDocCheck.status ?? 1);
 const expectedSchemas = new Set([
   "tenra-registry.ledger-export.v1",
   "tenra-registry.assembly-document-request.v1"
@@ -30,6 +35,9 @@ for (const file of files) {
   const payload = JSON.parse(fs.readFileSync(file, "utf8"));
   if (!payload || typeof payload !== "object" || typeof payload.schema !== "string") {
     throw new Error(`${file} must contain an object payload with a schema string.`);
+  }
+  if (typeof payload.exportId !== "string" || !payload.exportId.startsWith("registry-")) {
+    throw new Error(`${file} must include a stable registry exportId.`);
   }
   if (!expectedSchemas.has(payload.schema)) {
     throw new Error(`${file} uses an unexpected schema: ${payload.schema}`);

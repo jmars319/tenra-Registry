@@ -102,6 +102,7 @@ model Organization {
   documentTemplates  DocumentTemplate[]
   generatedDocuments GeneratedDocument[]
   importBatches      ImportBatch[]
+  handoffAudits      HandoffAudit[]
 }
 
 model Customer {
@@ -302,4 +303,23 @@ model ImportRecord {
 
   @@index([batchId, dataset])
   @@index([targetModel, targetId])
+}
+
+model HandoffAudit {
+  id             String       @id @default(cuid())
+  organizationId String
+  exportId       String
+  schema         String
+  targetApp      String
+  subjectId      String?
+  rowCount       Int          @default(0)
+  payloadSummary Json
+  downloadCount  Int          @default(1)
+  firstExportedAt DateTime    @default(now())
+  lastExportedAt DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, exportId])
+  @@index([organizationId, lastExportedAt])
+  @@index([organizationId, targetApp])
 }

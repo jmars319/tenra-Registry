@@ -759,6 +759,45 @@ export interface GeneratedDocumentDraft {
   assetCode?: string | undefined;
 }
 
+export interface HandoffAuditSummary {
+  id: string;
+  exportId: string;
+  schema: string;
+  targetApp: string;
+  subjectId?: string | undefined;
+  rowCount: number;
+  payloadSummary: Prisma.JsonValue;
+  downloadCount: number;
+  firstExportedAt: string;
+  lastExportedAt: string;
+}
+
+function serializeHandoffAudit(record: {
+  id: string;
+  exportId: string;
+  schema: string;
+  targetApp: string;
+  subjectId: string | null;
+  rowCount: number;
+  payloadSummary: Prisma.JsonValue;
+  downloadCount: number;
+  firstExportedAt: Date;
+  lastExportedAt: Date;
+}): HandoffAuditSummary {
+  return {
+    id: record.id,
+    exportId: record.exportId,
+    schema: record.schema,
+    targetApp: record.targetApp,
+    subjectId: normalizeOptionalString(record.subjectId),
+    rowCount: record.rowCount,
+    payloadSummary: record.payloadSummary,
+    downloadCount: record.downloadCount,
+    firstExportedAt: dateToIsoDateTime(record.firstExportedAt),
+    lastExportedAt: dateToIsoDateTime(record.lastExportedAt)
+  };
+}
+
 export async function getDefaultOrganization(): Promise<Organization> {
   const organization =
     (await db.organization.findUnique({
@@ -777,6 +816,61 @@ export async function getDefaultOrganization(): Promise<Organization> {
   }
 
   return serializeOrganization(organization);
+}
+
+export async function recordHandoffAudit(input: {
+  organizationId: string;
+  exportId: string;
+  schema: string;
+  targetApp: "ledger" | "assembly";
+  subjectId?: string | undefined;
+  rowCount: number;
+  payloadSummary: Prisma.InputJsonValue;
+}): Promise<HandoffAuditSummary> {
+  const record = await db.handoffAudit.upsert({
+    where: {
+      organizationId_exportId: {
+        organizationId: input.organizationId,
+        exportId: input.exportId
+      }
+    },
+    create: {
+      organizationId: input.organizationId,
+      exportId: input.exportId,
+      schema: input.schema,
+      targetApp: input.targetApp,
+      subjectId: input.subjectId ?? null,
+      rowCount: input.rowCount,
+      payloadSummary: input.payloadSummary
+    },
+    update: {
+      schema: input.schema,
+      targetApp: input.targetApp,
+      subjectId: input.subjectId ?? null,
+      rowCount: input.rowCount,
+      payloadSummary: input.payloadSummary,
+      downloadCount: {
+        increment: 1
+      }
+    }
+  });
+
+  return serializeHandoffAudit(record);
+}
+
+export async function listHandoffAudits(): Promise<HandoffAuditSummary[]> {
+  const organization = await getDefaultOrganization();
+  const records = await db.handoffAudit.findMany({
+    where: {
+      organizationId: organization.id
+    },
+    orderBy: {
+      lastExportedAt: "desc"
+    },
+    take: 100
+  });
+
+  return records.map(serializeHandoffAudit);
 }
 
 export async function getDashboardSnapshot(): Promise<{
