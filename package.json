@@ -10,6 +10,7 @@
   },
   "scripts": {
     "bootstrap": "node ./scripts/bootstrap.mjs",
+    "db:prepare": "node ./scripts/prepare-postgres.mjs",
     "check:env": "node ./scripts/check-env.mjs",
     "check:packages": "node ./scripts/check-packages.mjs",
     "dev:web": "pnpm --filter @registry/webapp dev",

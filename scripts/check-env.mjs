@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const cwd = new URL("..", import.meta.url);
 const envFile = new URL("../.env", import.meta.url);
+const envLocalFile = new URL("../.env.local", import.meta.url);
+const defaultDatabaseUrl = "postgresql:///registry?schema=public";
 
 function runCommand(command, args) {
   const result = spawnSync(command, args, {
@@ -32,6 +34,13 @@ try {
   loadEnvFile(fileURLToPath(envFile));
 } catch {
   hasEnvFile = false;
+}
+
+try {
+  await access(envLocalFile, constants.F_OK);
+  loadEnvFile(fileURLToPath(envLocalFile));
+} catch {
+  // .env.local is optional.
 }
 
 const checks = [
@@ -68,8 +77,8 @@ const checks = [
       const databaseUrl = process.env.DATABASE_URL?.trim();
 
       return {
-        ok: typeof databaseUrl === "string" && databaseUrl.length > 0,
-        output: databaseUrl ? "configured" : "missing from repo root .env"
+        ok: true,
+        output: databaseUrl ? "configured" : `using default ${defaultDatabaseUrl}`
       };
     }
   },
@@ -77,14 +86,7 @@ const checks = [
     label: "Postgres connection",
     required: true,
     test() {
-      const databaseUrl = process.env.DATABASE_URL?.trim();
-
-      if (!databaseUrl) {
-        return {
-          ok: false,
-          output: "DATABASE_URL is not configured"
-        };
-      }
+      const databaseUrl = process.env.DATABASE_URL?.trim() || defaultDatabaseUrl;
 
       const parsedUrl = new URL(databaseUrl);
       parsedUrl.search = "";
@@ -140,8 +142,7 @@ if (missingEnv.length > 0) {
 }
 
 if (!hasEnvFile) {
-  hasFailure = true;
-  console.log("FAIL missing repo root .env file");
+  console.log(`WARN missing repo root .env file; Registry will use ${defaultDatabaseUrl} unless DATABASE_URL is set elsewhere.`);
 }
 
 console.log("Note: desktop packaging tools are optional unless you are building the Applications launcher.");

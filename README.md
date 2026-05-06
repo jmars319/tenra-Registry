@@ -45,6 +45,7 @@ available container -> create active rental -> post charges/payments -> complete
 ```bash
 cp .env.example .env
 pnpm bootstrap
+pnpm db:prepare
 pnpm --filter @registry/webapp db:migrate
 pnpm --filter @registry/webapp db:seed
 pnpm dev:web
@@ -57,7 +58,7 @@ pnpm doctor
 
 - Node `22+`
 - pnpm `10+`
-- existing local Postgres instance via `DATABASE_URL`
+- existing local Postgres instance via `DATABASE_URL`, or the default `postgresql:///registry?schema=public` after `pnpm db:prepare`
 - Prisma 7 with the Postgres driver adapter
 - local desktop launcher loads repo-root `.env` / `.env.local`, defaults to `postgresql:///registry?schema=public` when `DATABASE_URL` is not set, and depends on this repo path, pnpm, the built Next app, and the same local Postgres database
 - strict TypeScript across the monorepo
@@ -67,7 +68,7 @@ pnpm doctor
 - The UI is intentionally single-organization for this pass, but the schema remains organization-aware.
 - Billing now uses a receivable ledger. Positive entries increase customer balance; payments and credits reduce it.
 - Unit lifecycle automation only moves units between `available` and `assigned`. `maintenance` and `archived` remain manual states.
-- Documents now create generated records and track print/email actions. PDF generation, direct email sending, and immutable delivery history are still future work.
+- Documents now create generated records, track print/email actions, and generate simple downloadable PDFs. Direct email sending and immutable delivery history are still future work.
 - Imports now support dry-run validation, execution, batch audit records, and rollback for newly imported records. A real source export should still be reviewed before the field mapping is considered final.
 - Auth provider integration and a separate backend service are intentionally deferred.
 - The desktop app is a local launcher, not a standalone distributable yet. Distribution should later bundle or provision the server/database path instead of depending on this repo checkout.
