@@ -239,6 +239,53 @@ export interface RegistryLedgerExport {
   rows: RegistryLedgerExportRow[];
 }
 
+export interface BuildRegistryLedgerExportInput {
+  organizationId: EntityId;
+  exportedAt?: string | undefined;
+  entries: ReceivableEntry[];
+  customers: Array<Pick<Customer, "id" | "name">>;
+  assignments?: Array<Pick<Assignment, "id">> | undefined;
+  assets?: Array<Pick<Asset, "id" | "assetCode">> | undefined;
+}
+
+export function buildRegistryLedgerExport(input: BuildRegistryLedgerExportInput): RegistryLedgerExport {
+  const customersById = new Map(input.customers.map((customer) => [customer.id, customer]));
+  const assignmentIds = new Set((input.assignments ?? []).map((assignment) => assignment.id));
+  const assetsById = new Map((input.assets ?? []).map((asset) => [asset.id, asset]));
+
+  return {
+    schema: "tenra-registry.ledger-export.v1",
+    exportedAt: input.exportedAt ?? new Date().toISOString(),
+    organizationId: input.organizationId,
+    sourceApp: "registry",
+    rows: input.entries
+      .filter((entry) => entry.status === "posted")
+      .map((entry) => {
+        const customer = customersById.get(entry.customerId);
+        const asset = entry.assetId ? assetsById.get(entry.assetId) : undefined;
+        const rentalCode =
+          entry.assignmentId && (assignmentIds.size === 0 || assignmentIds.has(entry.assignmentId))
+            ? entry.assignmentId
+            : undefined;
+
+        return {
+          externalId: entry.id,
+          customerCode: entry.customerId,
+          customerName: customer?.name ?? entry.customerId,
+          rentalCode,
+          unitCode: asset?.assetCode,
+          entryType: entry.type,
+          effectiveDate: entry.effectiveDate,
+          description: entry.description,
+          amountMinor: entry.amountInCents,
+          paymentMethod: entry.paymentMethod,
+          reference: entry.reference,
+          notes: entry.notes
+        };
+      })
+  };
+}
+
 export interface RegistryAssemblyDocumentRequest {
   schema: "tenra-registry.assembly-document-request.v1";
   exportedAt: string;

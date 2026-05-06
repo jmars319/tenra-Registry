@@ -28,6 +28,7 @@
     "verify:web": "pnpm --filter @registry/webapp verify",
     "verify:desktop": "pnpm --filter @registry/desktopapp verify",
     "verify:mobile": "pnpm --filter @registry/mobileapp verify",
+    "verify:handoffs": "node ./scripts/validate-handoffs.mjs",
     "verify:all": "pnpm verify:web && pnpm verify:desktop && pnpm verify:mobile",
     "doctor": "node ./scripts/doctor.mjs"
   },

@@ -76,7 +76,12 @@ export default async function ReceivablesPage() {
               <p className="eyebrow">Ledger</p>
               <h2>Recent entries</h2>
             </div>
-            <span className="pill">{entries.length} entries</span>
+            <div className="header-actions">
+              <Link className="inline-link" href="/api/handoffs/ledger-export">
+                Export to Ledger
+              </Link>
+              <span className="pill">{entries.length} entries</span>
+            </div>
           </div>
 
           {entries.length === 0 ? (
