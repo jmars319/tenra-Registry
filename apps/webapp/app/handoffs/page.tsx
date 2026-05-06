@@ -105,7 +105,9 @@ export default async function HandoffsPage({
                 {audits.map((audit) => (
                   <tr key={audit.id}>
                     <td>
-                      <code>{audit.exportId}</code>
+                      <Link href={`/handoffs/${encodeURIComponent(audit.exportId)}`}>
+                        <code>{audit.exportId}</code>
+                      </Link>
                       {audit.subjectId ? <div className="table-subcopy">Subject {audit.subjectId}</div> : null}
                     </td>
                     <td>{audit.targetApp}</td>
@@ -128,6 +130,12 @@ export default async function HandoffsPage({
                         href={`/api/handoffs/replay/${encodeURIComponent(audit.exportId)}`}
                       >
                         JSON
+                      </Link>
+                      <Link
+                        className="button-secondary button-link no-print"
+                        href={`/handoffs/${encodeURIComponent(audit.exportId)}`}
+                      >
+                        Detail
                       </Link>
                     </td>
                   </tr>
