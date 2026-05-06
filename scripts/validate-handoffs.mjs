@@ -24,6 +24,7 @@ const files = listJsonFiles(fixtureDir);
 if (files.length === 0) {
   throw new Error("No handoff fixtures found.");
 }
+const payloadsByFile = new Map();
 
 function requireText(value, expected, file) {
   if (typeof value !== "string" || !value.includes(expected)) {
@@ -33,6 +34,7 @@ function requireText(value, expected, file) {
 
 for (const file of files) {
   const payload = JSON.parse(fs.readFileSync(file, "utf8"));
+  payloadsByFile.set(path.basename(file), payload);
   if (!payload || typeof payload !== "object" || typeof payload.schema !== "string") {
     throw new Error(`${file} must contain an object payload with a schema string.`);
   }
@@ -58,6 +60,16 @@ for (const file of files) {
     if (payload.desiredOutput !== "notice") {
       throw new Error(`${file} must keep the golden Assembly output as a notice.`);
     }
+  }
+}
+
+const golden = payloadsByFile.get("ledger-export.json");
+const duplicate = payloadsByFile.get("duplicate-reconciliation-ledger-export.json");
+if (golden && duplicate) {
+  const goldenKey = `${golden.exportId}:${golden.rows?.[0]?.externalId}`;
+  const duplicateKey = `${duplicate.exportId}:${duplicate.rows?.[0]?.externalId}`;
+  if (goldenKey !== duplicateKey) {
+    throw new Error("Duplicate reconciliation fixture must preserve the same Registry export/import key as the golden Ledger export.");
   }
 }
 

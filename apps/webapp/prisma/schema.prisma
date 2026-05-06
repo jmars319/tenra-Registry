@@ -306,20 +306,24 @@ model ImportRecord {
 }
 
 model HandoffAudit {
-  id             String       @id @default(cuid())
-  organizationId String
-  exportId       String
-  schema         String
-  targetApp      String
-  subjectId      String?
-  rowCount       Int          @default(0)
-  payloadSummary Json
-  downloadCount  Int          @default(1)
-  firstExportedAt DateTime    @default(now())
-  lastExportedAt DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id                    String       @id @default(cuid())
+  organizationId        String
+  exportId              String
+  schema                String
+  targetApp             String
+  subjectId             String?
+  rowCount              Int          @default(0)
+  payloadSummary        Json
+  downloadCount         Int          @default(1)
+  lastDeliveryStatus    String       @default("downloaded")
+  lastDeliveryMessage   String?
+  lastDeliveryUpdatedAt DateTime?
+  firstExportedAt       DateTime     @default(now())
+  lastExportedAt        DateTime     @updatedAt
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, exportId])
   @@index([organizationId, lastExportedAt])
   @@index([organizationId, targetApp])
+  @@index([organizationId, lastDeliveryStatus])
 }

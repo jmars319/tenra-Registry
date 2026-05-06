@@ -768,6 +768,9 @@ export interface HandoffAuditSummary {
   rowCount: number;
   payloadSummary: Prisma.JsonValue;
   downloadCount: number;
+  lastDeliveryStatus: string;
+  lastDeliveryMessage?: string | undefined;
+  lastDeliveryUpdatedAt?: string | undefined;
   firstExportedAt: string;
   lastExportedAt: string;
 }
@@ -781,6 +784,9 @@ function serializeHandoffAudit(record: {
   rowCount: number;
   payloadSummary: Prisma.JsonValue;
   downloadCount: number;
+  lastDeliveryStatus: string;
+  lastDeliveryMessage: string | null;
+  lastDeliveryUpdatedAt: Date | null;
   firstExportedAt: Date;
   lastExportedAt: Date;
 }): HandoffAuditSummary {
@@ -793,6 +799,9 @@ function serializeHandoffAudit(record: {
     rowCount: record.rowCount,
     payloadSummary: record.payloadSummary,
     downloadCount: record.downloadCount,
+    lastDeliveryStatus: record.lastDeliveryStatus,
+    lastDeliveryMessage: normalizeOptionalString(record.lastDeliveryMessage),
+    lastDeliveryUpdatedAt: record.lastDeliveryUpdatedAt ? dateToIsoDateTime(record.lastDeliveryUpdatedAt) : undefined,
     firstExportedAt: dateToIsoDateTime(record.firstExportedAt),
     lastExportedAt: dateToIsoDateTime(record.lastExportedAt)
   };
@@ -841,7 +850,9 @@ export async function recordHandoffAudit(input: {
       targetApp: input.targetApp,
       subjectId: input.subjectId ?? null,
       rowCount: input.rowCount,
-      payloadSummary: input.payloadSummary
+      payloadSummary: input.payloadSummary,
+      lastDeliveryStatus: "downloaded",
+      lastDeliveryUpdatedAt: new Date()
     },
     update: {
       schema: input.schema,
@@ -849,6 +860,9 @@ export async function recordHandoffAudit(input: {
       subjectId: input.subjectId ?? null,
       rowCount: input.rowCount,
       payloadSummary: input.payloadSummary,
+      lastDeliveryStatus: "downloaded",
+      lastDeliveryMessage: null,
+      lastDeliveryUpdatedAt: new Date(),
       downloadCount: {
         increment: 1
       }
@@ -858,11 +872,68 @@ export async function recordHandoffAudit(input: {
   return serializeHandoffAudit(record);
 }
 
-export async function listHandoffAudits(): Promise<HandoffAuditSummary[]> {
+export async function updateHandoffDeliveryStatus(input: {
+  exportId: string;
+  status: "downloaded" | "sent" | "received" | "failed";
+  message?: string | undefined;
+}): Promise<HandoffAuditSummary | null> {
+  const organization = await getDefaultOrganization();
+  const existing = await db.handoffAudit.findUnique({
+    where: {
+      organizationId_exportId: {
+        organizationId: organization.id,
+        exportId: input.exportId
+      }
+    }
+  });
+
+  if (!existing) {
+    return null;
+  }
+
+  const record = await db.handoffAudit.update({
+    where: {
+      organizationId_exportId: {
+        organizationId: organization.id,
+        exportId: input.exportId
+      }
+    },
+    data: {
+      lastDeliveryStatus: input.status,
+      lastDeliveryMessage: input.message ?? null,
+      lastDeliveryUpdatedAt: new Date()
+    }
+  });
+
+  return serializeHandoffAudit(record);
+}
+
+export async function getHandoffAuditByExportId(exportId: string): Promise<HandoffAuditSummary | null> {
+  const organization = await getDefaultOrganization();
+  const record = await db.handoffAudit.findUnique({
+    where: {
+      organizationId_exportId: {
+        organizationId: organization.id,
+        exportId
+      }
+    }
+  });
+
+  return record ? serializeHandoffAudit(record) : null;
+}
+
+export async function listHandoffAudits(filters: {
+  targetApp?: string | undefined;
+  deliveryStatus?: string | undefined;
+  exportId?: string | undefined;
+} = {}): Promise<HandoffAuditSummary[]> {
   const organization = await getDefaultOrganization();
   const records = await db.handoffAudit.findMany({
     where: {
-      organizationId: organization.id
+      organizationId: organization.id,
+      ...(filters.targetApp ? { targetApp: filters.targetApp } : {}),
+      ...(filters.deliveryStatus ? { lastDeliveryStatus: filters.deliveryStatus } : {}),
+      ...(filters.exportId ? { exportId: { contains: filters.exportId } } : {})
     },
     orderBy: {
       lastExportedAt: "desc"

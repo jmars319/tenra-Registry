@@ -10,8 +10,20 @@ function formatDateTime(value: string): string {
   }).format(new Date(value));
 }
 
-export default async function HandoffsPage() {
-  const audits = await listHandoffAudits();
+function getParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function HandoffsPage({
+  searchParams
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = (await searchParams) ?? {};
+  const targetApp = getParam(params.targetApp);
+  const deliveryStatus = getParam(params.deliveryStatus);
+  const exportId = getParam(params.exportId);
+  const audits = await listHandoffAudits({ targetApp, deliveryStatus, exportId });
 
   return (
     <section className="stack">
@@ -33,6 +45,39 @@ export default async function HandoffsPage() {
           <span className="pill">{audits.length} tracked</span>
         </div>
 
+        <form className="form-grid three" method="get">
+          <label className="field-stack">
+            <span>Target</span>
+            <select className="form-input" defaultValue={targetApp ?? ""} name="targetApp">
+              <option value="">All targets</option>
+              <option value="ledger">Ledger</option>
+              <option value="assembly">Assembly</option>
+            </select>
+          </label>
+          <label className="field-stack">
+            <span>Status</span>
+            <select className="form-input" defaultValue={deliveryStatus ?? ""} name="deliveryStatus">
+              <option value="">All statuses</option>
+              <option value="downloaded">Downloaded</option>
+              <option value="sent">Sent</option>
+              <option value="received">Received</option>
+              <option value="failed">Failed</option>
+            </select>
+          </label>
+          <label className="field-stack">
+            <span>Export ID</span>
+            <input className="form-input" defaultValue={exportId ?? ""} name="exportId" />
+          </label>
+          <div className="actions-row">
+            <button className="button-secondary" type="submit">
+              Filter
+            </button>
+            <Link className="button-secondary button-link no-print" href="/handoffs">
+              Reset
+            </Link>
+          </div>
+        </form>
+
         {audits.length === 0 ? (
           <div className="empty-state empty-state--compact">
             <h3>No handoffs downloaded yet</h3>
@@ -51,7 +96,9 @@ export default async function HandoffsPage() {
                   <th>Schema</th>
                   <th>Rows</th>
                   <th>Downloads</th>
+                  <th>Status</th>
                   <th>Last exported</th>
+                  <th>Replay</th>
                 </tr>
               </thead>
               <tbody>
@@ -66,8 +113,22 @@ export default async function HandoffsPage() {
                     <td>{audit.rowCount}</td>
                     <td>{audit.downloadCount}</td>
                     <td>
+                      <span className="pill">{audit.lastDeliveryStatus}</span>
+                      {audit.lastDeliveryMessage ? (
+                        <div className="table-subcopy">{audit.lastDeliveryMessage}</div>
+                      ) : null}
+                    </td>
+                    <td>
                       <div>{formatDateTime(audit.lastExportedAt)}</div>
                       <div className="table-subcopy">First {formatDateTime(audit.firstExportedAt)}</div>
+                    </td>
+                    <td>
+                      <Link
+                        className="button-secondary button-link no-print"
+                        href={`/api/handoffs/replay/${encodeURIComponent(audit.exportId)}`}
+                      >
+                        JSON
+                      </Link>
                     </td>
                   </tr>
                 ))}
