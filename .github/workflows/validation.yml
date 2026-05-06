@@ -20,6 +20,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Validate handoff fixtures
         run: pnpm run verify:handoffs
+      - name: Create CI env file
+        run: touch .env
       - name: Generate Prisma Client
         run: pnpm --filter @registry/webapp db:generate
       - name: Run typecheck
