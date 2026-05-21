@@ -44,11 +44,6 @@ export function AppShell({ children }: PropsWithChildren) {
                 </Link>
               </li>
             ))}
-            <li>
-              <Link className={isActiveRoute(pathname, "/suite") ? "nav-link nav-link--active" : "nav-link"} href="/suite">
-                Suite Control
-              </Link>
-            </li>
           </ul>
         </nav>
 

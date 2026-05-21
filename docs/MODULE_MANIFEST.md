@@ -1,47 +1,33 @@
-# Module Manifest
-
-Generated from `tenra Registry/contracts/handoff-catalog.json` by `tenra Registry/scripts/generate-suite-contract-docs.mjs`.
+# Registry App Manifest
 
 ## Standalone Mode
 
-Runs as a complete rental operations app with its own customers, assets, assignments, receivables, documents, imports, reports, and settings.
+Registry runs as the rental and sales management desk without Hub, Ledger, Assembly, Scout, or any other app. Integrations are explicit exports and document requests.
 
-## Required Suite Dependencies
+## Repository Path
 
-- None
+`business/core/tenra Registry`
 
-## Optional Suite Dependencies
+## Optional Integrations
 
-- tenra Ledger: Optional financial reconciliation import/export.
-- tenra Assembly: Optional document request handoff when richer drafting is useful.
+- tenra Ledger: export reviewed charges, payments, credits, deposits, refunds, and adjustments for bookkeeping.
+- tenra Assembly: request approved rental paperwork, statements, notices, and customer documents from Registry context.
 
 ## Provides
 
-- suite catalog
-- handoff audit
-- replay bundle
-- ledger export
-- assembly document request
+- Customer and account records.
+- Unit and asset inventory.
+- Rental and sales assignment records.
+- Receivables and balance summaries.
+- Ledger export payloads.
+- Assembly document request payloads.
+- Registry-owned handoff audit records.
 
 ## Consumes
 
-- handoff receipts
+- None for core rental/sales management.
 
-## Contracts
-
-Emits:
+## App-Owned Contracts
 
 - `tenra-registry.ledger-export.v1`
 - `tenra-registry.assembly-document-request.v1`
-
-Accepts:
-
-- None
-
-## Rules
-
-- Each app must remain complete and usable without another tenra app running.
-- Suite integrations are optional module links, not required runtime dependencies.
-- Shared functions should be exposed through explicit local APIs, exports, imports, or schemas.
-- No app may read another app's private filesystem, database, or localStorage state.
-- Registry can index and audit the module graph, but it must not become a hidden runtime bus.

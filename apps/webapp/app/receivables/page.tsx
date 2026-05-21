@@ -77,7 +77,7 @@ export default async function ReceivablesPage() {
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Authenticated handoffs</p>
-                <h2>Suite exports</h2>
+                <h2>Business exports</h2>
               </div>
               <span className="pill">manager role</span>
             </div>

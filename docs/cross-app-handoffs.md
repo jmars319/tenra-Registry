@@ -1,6 +1,6 @@
 # Cross-App Handoffs
 
-Registry should interoperate with the rest of the tenra suite through explicit exported records or local APIs. The first implementation should be file-based and easy to inspect before any background automation is introduced.
+Registry interoperates with the business suite through explicit exported records or local APIs. Its Registry-owned handoffs are intentionally limited to Ledger bookkeeping exports and Assembly document requests.
 
 ## Registry to Ledger
 
@@ -28,31 +28,6 @@ Canonical envelope: `tenra-registry.ledger-export.v1`.
 }
 ```
 
-## Scout to Registry
-
-Purpose: turn a qualified opportunity into a customer or prospect record.
-
-Minimum record:
-
-```json
-{
-  "schema": "tenra.scout.registry-lead.v1",
-  "businessName": "Business name",
-  "contactName": "optional-contact",
-  "email": "optional-email",
-  "phone": "optional-phone",
-  "websiteUrl": "optional-url",
-  "evidence": [
-    {
-      "kind": "screenshot | audit | search-result | note",
-      "title": "Evidence title",
-      "source": "source path or URL"
-    }
-  ],
-  "recommendedNextStep": "Human-readable next action"
-}
-```
-
 ## Registry to Assembly
 
 Purpose: create documents, notices, or content from approved operational context.
@@ -73,31 +48,6 @@ Canonical envelope: `tenra-registry.assembly-document-request.v1`.
 }
 ```
 
-## Align to Registry
+## Future Review
 
-Purpose: attach public profile and location state to an organization/customer location.
-
-Minimum record:
-
-```json
-{
-  "schema": "tenra.align.registry-location-state.v1",
-  "source": "google-business-profile",
-  "providerLocationId": "locations/123",
-  "displayName": "Public profile name",
-  "address": "Public address",
-  "profileHealthScore": 0,
-  "reviewNeedsReplyCount": 0,
-  "syncIssues": [
-    {
-      "severity": "info | warning | critical",
-      "title": "Issue title",
-      "recommendedAction": "Action to review"
-    }
-  ]
-}
-```
-
-## Guardrail and Proxy
-
-Guardrail should approve or deny any AI-capable write, send, file, or network action before it runs. Proxy should shape outgoing customer-visible wording after a human has chosen the content goal and before the final review step.
+Scout, Align, Proxy, and Guardrail may become useful later, but Registry should not imply ownership of those flows until a real Registry workflow requires them. Hub owns the broader suite catalog.

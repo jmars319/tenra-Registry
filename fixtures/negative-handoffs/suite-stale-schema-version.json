@@ -1,8 +1,0 @@
-{
-  "schema": "tenra-derive.reasoning-brief.v0",
-  "exportedAt": "2026-05-07T00:00:00.000Z",
-  "sourceApp": "derive",
-  "question": "Why is this stale?",
-  "answer": "The suite only accepts v1 here.",
-  "handoff": {}
-}

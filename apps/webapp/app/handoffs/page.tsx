@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { listHandoffAudits } from "../../src/server/registry-data";
-import { getSuiteCatalog } from "../../src/server/suite-contracts";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +14,11 @@ function getParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
+const registryHandoffSchemas = [
+  "tenra-registry.ledger-export.v1",
+  "tenra-registry.assembly-document-request.v1"
+] as const;
+
 export default async function HandoffsPage({
   searchParams
 }: {
@@ -26,7 +30,6 @@ export default async function HandoffsPage({
   const exportId = getParam(params.exportId);
   const schema = getParam(params.schema);
   const audits = await listHandoffAudits({ targetApp, deliveryStatus, exportId, schema });
-  const catalog = getSuiteCatalog();
 
   return (
     <section className="stack">
@@ -71,11 +74,9 @@ export default async function HandoffsPage({
             <span>Schema</span>
             <select className="form-input" defaultValue={schema ?? ""} name="schema">
               <option value="">All schemas</option>
-              {catalog.contracts
-                .filter((contract) => contract.schemaFieldRequired !== false)
-                .map((contract) => (
-                  <option key={contract.id} value={contract.id}>
-                    {contract.id}
+              {registryHandoffSchemas.map((schemaId) => (
+                  <option key={schemaId} value={schemaId}>
+                    {schemaId}
                   </option>
                 ))}
             </select>

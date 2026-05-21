@@ -1,54 +1,46 @@
 # tenra Registry
 
-tenra Registry is the suite coordination layer for tenra handoffs, app capabilities, contracts, and local integration visibility. It gives the ecosystem a controlled place to describe what each app can do, how handoffs are shaped, and how suite-level flows should be verified.
+tenra Registry is the rentals, sales/customer, unit, receivables, document, and Registry-owned handoff management app for the Tenra business suite.
 
-Registry is infrastructure for the tenra ecosystem. It is not a generic app store or marketing catalog.
+Registry is not the suite hub. Suite-wide catalog, contract matrix, and smoke-check ownership now belongs in `tenra Hub`.
 
 ## Operational Purpose
 
-- Define and validate cross-app handoff contracts.
-- Track suite capabilities and module boundaries.
-- Provide operator-facing visibility into integration flows.
-- Keep contract changes, fixtures, and compatibility notes in one repo.
+- Track customers, sales prospects, billing contacts, and account history.
+- Track portable storage units, yard inventory, condition, location, and assignment state.
+- Manage rentals, delivery/pickup status, recurring rent runs, rates, and customer balances.
+- Review receivables, payments, deposits, credits, refunds, and adjustments.
+- Prepare documents and template-backed customer paperwork.
+- Audit Registry-owned Ledger and Assembly handoff downloads.
 
-## Design Posture
+## Business Handoffs
 
-- Explicit contracts over implicit integration behavior.
-- Local verification before broader suite automation.
-- Shared domain packages for handoff vocabulary.
-- Desktop/web/mobile shells exist to support suite visibility, not to blur app ownership.
-- Contract fixtures and negative tests are part of the system.
+Registry preserves these app-owned handoff schemas:
+
+- `tenra-registry.ledger-export.v1`
+- `tenra-registry.assembly-document-request.v1`
+
+Ledger and Assembly are optional integrations. Registry must remain usable as a complete rental/sales desk without Hub, Ledger, Assembly, Scout, or any other app running.
 
 ## Architecture
 
 ```text
 apps/
-  webapp/       Next.js registry and integration surface
+  webapp/       Next.js rental/sales management runtime
   desktopapp/   Electron desktop launcher for the local web app
-  mobileapp/    Expo scaffold for later suite visibility
+  mobileapp/    Expo scaffold for future mobile workflows
 
 packages/
-  domain/       Handoff, module, and capability models
-  api-contracts/ Shared request and response contracts
-  validation/   Runtime schemas
-  auth/         Local/session placeholders
-  ui/           Shared interface primitives
-  config/       Product identity and environment helpers
+  domain/        Registry customer, unit, rental, receivable, and document models
+  api-contracts/ Registry request, response, and handoff contracts
+  validation/    Runtime schemas for Registry inputs and exports
+  auth/          Local/session placeholders
+  ui/            Shared interface primitives
+  config/        Registry identity, routes, and environment helpers
 
-docs/           Contract changelog, handoff standards, fixtures, and suite docs
+docs/            Registry setup, handoff, import, and repo documentation
+fixtures/        Registry-owned handoff fixtures
 ```
-
-## Current State
-
-- The repo contains the most complete tenra suite handoff documentation.
-- Contract generation and replay verification scripts are present.
-- The web app is the primary product surface.
-- The desktop app wraps the registry surface for local operator access.
-- Mobile remains a scaffold for future suite review.
-
-## Deployment Posture
-
-Registry is currently a local/development coordination system for the tenra ecosystem. Hosted deployment should follow contract hardening, auth decisions, and clear ownership of suite metadata.
 
 ## Working Locally
 
@@ -56,24 +48,16 @@ Registry is currently a local/development coordination system for the tenra ecos
 pnpm run bootstrap
 pnpm run dev:web
 pnpm run dev:desktop
-pnpm run contracts:generate
-pnpm run suite:smoke
+pnpm run verify:handoffs
+pnpm run verify:replay
 pnpm run verify:all
 pnpm run doctor
 ```
 
-Use the contract and handoff docs when making any cross-app integration change.
-
-## Direction
-
-- Keep Registry as the canonical suite integration reference.
-- Tighten handoff versioning and fixtures.
-- Make capability visibility useful without turning Registry into a broad product marketplace.
-- Continue separating infrastructure truth from individual app marketing.
-
 ## Related Documentation
 
-- [Suite Handoff Standard](docs/SUITE_HANDOFF_STANDARD.md)
-- [Suite Handoff Catalog](docs/SUITE_HANDOFF_CATALOG.md)
-- [Contract Changelog](docs/CONTRACT_CHANGELOG.md)
+- [Registry Handoffs](docs/HANDOFFS.md)
+- [Cross-App Handoffs](docs/cross-app-handoffs.md)
+- [Import Guide](docs/IMPORT_GUIDE.md)
+- [Developer Guide](docs/DEVELOPER_GUIDE.md)
 - [Repo Map](docs/REPO_MAP.md)

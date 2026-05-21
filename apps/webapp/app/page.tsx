@@ -37,21 +37,11 @@ export default async function DashboardPage() {
       note: `${formatBalanceLabel(snapshot.counts.pastDueInCents)} currently past due.`
     }
   ] as const;
-  const suiteHandoffs = [
-    {
-      label: "Scout intake",
-      target: "tenra Scout → Registry",
-      detail: "Create or update an organization/customer record from lead evidence, audit findings, and opportunity classification."
-    },
+  const businessHandoffs = [
     {
       label: "Ledger export",
       target: "Registry → tenra Ledger",
       detail: "Review posted charges, payments, credits, deposits, refunds, and adjustments before bookkeeping handoff."
-    },
-    {
-      label: "Align sync",
-      target: "tenra Align → Registry",
-      detail: "Attach public profile state, review needs, and sync issues to organization or location records."
     },
     {
       label: "Document brief",
@@ -258,12 +248,12 @@ export default async function DashboardPage() {
       <section className="panel-card panel-card--soft">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Suite Handoffs</p>
-            <h2>Where Registry connects next</h2>
+            <p className="eyebrow">Business Handoffs</p>
+            <h2>Registry-owned exports</h2>
           </div>
         </div>
         <div className="module-grid">
-          {suiteHandoffs.map((handoff) => (
+          {businessHandoffs.map((handoff) => (
             <article className="module-card" key={handoff.label}>
               <h3>{handoff.label}</h3>
               <p>{handoff.target}</p>
