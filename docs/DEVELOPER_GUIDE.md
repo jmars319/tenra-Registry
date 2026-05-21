@@ -45,6 +45,16 @@ The desktop app is the primary user-facing surface. It launches the production N
 - `pnpm verify:all`: run every app verification sequence
 - `pnpm doctor`: run the full repository health sequence
 
+## Local Tooling
+
+The shared local machine baseline is useful for Registry maintenance:
+
+- Use `actionlint` before changing GitHub Actions workflows.
+- Use `shellcheck` and `shfmt` when editing repo scripts.
+- Use `osv-scanner` for dependency advisory checks across package manifests.
+- Use `pa11y` and `lighthouse` against the running Registry UI when user-facing screens change.
+- Use OrbStack/Docker only when local Postgres or other service parity is needed; the documented workflow still runs through the repo scripts above.
+
 ## Add More Functionality Later
 
 1. Extend the shared packages first if the new behavior changes domain language or contracts.
