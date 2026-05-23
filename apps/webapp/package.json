@@ -17,24 +17,24 @@
     "verify": "pnpm lint && pnpm typecheck && pnpm db:check && pnpm db:smoke && pnpm build"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "latest",
-    "@prisma/client": "latest",
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
     "@registry/api-contracts": "workspace:*",
     "@registry/auth": "workspace:*",
     "@registry/config": "workspace:*",
     "@registry/domain": "workspace:*",
     "@registry/ui": "workspace:*",
     "@registry/validation": "workspace:*",
-    "next": "latest",
-    "pg": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "server-only": "latest"
+    "next": "^16.2.6",
+    "pg": "^8.20.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "prisma": "latest",
-    "tsx": "latest"
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "prisma": "^7.5.0",
+    "tsx": "^4.21.0"
   }
 }

@@ -13,12 +13,12 @@
   "dependencies": {
     "@registry/config": "workspace:*",
     "@registry/ui": "workspace:*",
-    "expo": "latest",
-    "expo-status-bar": "latest",
-    "react": "latest",
-    "react-native": "latest"
+    "expo": "^55.0.6",
+    "expo-status-bar": "^55.0.4",
+    "react": "^19.2.4",
+    "react-native": "^0.84.1"
   },
   "devDependencies": {
-    "@types/react": "latest"
+    "@types/react": "^19.2.14"
   }
 }
