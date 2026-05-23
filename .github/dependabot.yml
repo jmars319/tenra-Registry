@@ -15,6 +15,12 @@ updates:
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
+      # Expo and React Native SDK updates are handled manually because they are
+      # migration-sized and Dependabot times out walking the managed Expo tree.
+      - dependency-name: "@expo/*"
+      - dependency-name: "expo"
+      - dependency-name: "expo-status-bar"
+      - dependency-name: "react-native"
     groups:
       minor-and-patch:
         patterns:
