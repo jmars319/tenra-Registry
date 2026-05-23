@@ -11,6 +11,10 @@ updates:
         update-types:
           - "version-update:semver-minor"
           - "version-update:semver-patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
     groups:
       minor-and-patch:
         patterns:
@@ -29,6 +33,10 @@ updates:
         update-types:
           - "version-update:semver-minor"
           - "version-update:semver-patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
     groups:
       minor-and-patch:
         patterns:
