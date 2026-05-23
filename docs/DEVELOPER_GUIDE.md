@@ -55,6 +55,14 @@ The shared local machine baseline is useful for Registry maintenance:
 - Use `pa11y` and `lighthouse` against the running Registry UI when user-facing screens change.
 - Use OrbStack/Docker only when local Postgres or other service parity is needed; the documented workflow still runs through the repo scripts above.
 
+## Dependency Maintenance
+
+- Dependabot is enabled for GitHub Actions workflow updates.
+- pnpm app and package dependencies are maintained manually with `pnpm outdated -r`, targeted `pnpm update` commands, `pnpm install --lockfile-only` when needed, and the verification commands above.
+- Keep npm package ranges concrete, not `latest`, so updates remain reviewable.
+- Treat Expo and React Native SDK updates as planned migrations that require `pnpm verify:mobile` and a mobile smoke check.
+- Keep `just security` passing after dependency changes.
+
 ## Add More Functionality Later
 
 1. Extend the shared packages first if the new behavior changes domain language or contracts.
