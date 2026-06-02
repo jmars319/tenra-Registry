@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const desktopDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(desktopDir, "../..");
-const appName = "tenra Registry";
+const appName = "Registry by Tenra";
 const legacyAppNames = ["Tenra Registry"];
 const systemApplicationsDir = "/Applications";
 const userApplicationsDir = path.resolve(os.homedir(), "Applications");
@@ -38,7 +38,7 @@ async function findPackagedApp() {
     }
   }
 
-  throw new Error("tenra Registry desktop package was not found. Run pnpm package:desktop first.");
+  throw new Error("Registry by Tenra desktop package was not found. Run pnpm package:desktop first.");
 }
 
 async function run(command, args) {

@@ -23,12 +23,12 @@
 ## Packages
 
 - `packages/shared-types`: low-level shared aliases and primitives
-- `packages/domain`: tenra Registry entities, enums, and minimal business helpers
+- `packages/domain`: Registry by Tenra entities, enums, and minimal business helpers
 - `packages/api-contracts`: shared request and response contracts for the active CRUD flows
 - `packages/validation`: Zod schemas for contracts and core inputs
 - `packages/auth`: role and session definitions reserved for future auth work
 - `packages/ui`: shared tokens and small presentation helpers
-- `packages/config`: tenra Registry-specific constants, routes, and default organization metadata
+- `packages/config`: Registry by Tenra-specific constants, routes, and default organization metadata
 
 ## Support Files
 

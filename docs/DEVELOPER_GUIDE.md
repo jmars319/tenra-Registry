@@ -4,7 +4,7 @@
 
 1. Install Node `22+`, pnpm `10+`, and ensure Postgres is available locally.
 2. Copy `.env.example` to `.env`.
-3. Set `DATABASE_URL` to the local tenra Registry database.
+3. Set `DATABASE_URL` to the local Registry by Tenra database.
 4. Run `pnpm bootstrap`.
 5. Run `pnpm --filter @registry/webapp db:migrate`.
 6. Run `pnpm --filter @registry/webapp db:seed`.

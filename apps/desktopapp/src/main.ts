@@ -9,7 +9,7 @@ import { showStatus } from "./desktop/statusPage";
 
 declare const __REGISTRY_REPO_ROOT__: string;
 
-const appName = "tenra Registry";
+const appName = "Registry by Tenra";
 const defaultPort = 3487;
 const startupTimeoutMs = 30_000;
 const defaultDatabaseUrl = "postgresql:///registry?schema=public";

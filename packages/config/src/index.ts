@@ -1,6 +1,6 @@
 import type { RegistryRole } from "@registry/auth";
 
-export const REGISTRY_APP_NAME = "tenra Registry";
+export const REGISTRY_APP_NAME = "Registry by Tenra";
 export const REGISTRY_DEFAULT_ORGANIZATION_NAME = "tenra Registry Operations";
 export const REGISTRY_DEFAULT_ORGANIZATION_SLUG = "registry-ops";
 

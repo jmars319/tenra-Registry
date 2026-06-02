@@ -15,7 +15,7 @@
     "check:packages": "node ./scripts/check-packages.mjs",
     "dev:web": "pnpm --filter @registry/webapp dev",
     "dev:desktop": "pnpm install:desktop",
-    "launch:desktop": "open -n \"/Applications/tenra Registry.app\"",
+    "launch:desktop": "open -n \"/Applications/Registry by Tenra.app\"",
     "dev:mobile": "pnpm --filter @registry/mobileapp dev",
     "dev:both": "pnpm exec concurrently -k -n web,desktop -c blue,green \"pnpm dev:web\" \"pnpm dev:desktop\"",
     "build:web": "pnpm --filter @registry/webapp build",
@@ -48,5 +48,6 @@
     "globals": "^17.4.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.0"
-  }
+  },
+  "description": "Registry by Tenra is a rental, customer, receivables, and handoff workspace for Tenra business operations."
 }

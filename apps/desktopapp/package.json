@@ -2,7 +2,7 @@
   "name": "@registry/desktopapp",
   "private": true,
   "version": "0.1.0",
-  "description": "Desktop launcher for the tenra Registry web app.",
+  "description": "Desktop launcher for Registry by Tenra.",
   "author": "tenra",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "co.tenra.registry.desktop",
-    "productName": "tenra Registry",
+    "productName": "Registry by Tenra",
     "directories": {
       "buildResources": "assets",
       "output": "../../dist/desktop"

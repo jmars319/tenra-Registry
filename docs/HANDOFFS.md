@@ -1,6 +1,6 @@
-# tenra Registry Handoffs
+# Registry by Tenra Handoffs
 
-tenra Registry stays unique as the rental operating desk. Customers, units, rentals, receivables, imports, and documents are a complete domain.
+Registry by Tenra stays unique as the rental operating desk. Customers, units, rentals, receivables, imports, and documents are a complete domain.
 
 ## Produces
 

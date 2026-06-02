@@ -6,7 +6,7 @@ Registry runs as the rental and sales management desk without Hub, Ledger, Assem
 
 ## Repository Path
 
-`business/core/tenra Registry`
+`business/core/Registry by Tenra`
 
 ## Optional Integrations
 

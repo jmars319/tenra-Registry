@@ -16,7 +16,7 @@ interface DocumentDeliveryActionsProps {
 function createMailtoHref(recipientEmail: string | undefined, subject: string | undefined, body: string): string {
   const address = recipientEmail ?? "";
   const params = new URLSearchParams({
-    subject: subject ?? "Document from tenra Registry",
+    subject: subject ?? "Document from Registry by Tenra",
     body
   });
 

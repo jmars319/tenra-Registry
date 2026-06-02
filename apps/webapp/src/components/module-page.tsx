@@ -29,7 +29,7 @@ export function ModulePage({ title, summary, statusNote }: ModulePageProps) {
       <div className="panel-card panel-card--soft">
         <h2>Working principle</h2>
         <p>
-          tenra Registry should stay general enough for rental operations while remaining grounded in customers, portable
+          Registry by Tenra should stay general enough for rental operations while remaining grounded in customers, portable
           units, rentals, receivables, documents, and reports.
         </p>
         <Link className="inline-link" href="/">

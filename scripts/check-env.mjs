@@ -120,7 +120,7 @@ for (const requiredFile of [".env.example"]) {
   }
 }
 
-console.log("tenra Registry environment check");
+console.log("Registry by Tenra environment check");
 
 let hasFailure = false;
 

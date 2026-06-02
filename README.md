@@ -1,8 +1,8 @@
-# tenra Registry
+# Registry by Tenra
 
-tenra Registry is the rentals, sales/customer, unit, receivables, document, and Registry-owned handoff management app for the Tenra business suite.
+Registry by Tenra is the rentals, sales/customer, unit, receivables, document, and Registry-owned handoff management app for the Tenra business suite.
 
-Registry is not the suite hub. Suite-wide catalog, contract matrix, and smoke-check ownership now belongs in `tenra Hub`.
+Registry is not the suite hub. Suite-wide catalog, handoff interface matrix, and smoke-check ownership now belongs in `Hub by Tenra`.
 
 ## Operational Purpose
 

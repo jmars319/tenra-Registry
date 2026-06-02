@@ -40,12 +40,12 @@ export default async function DashboardPage() {
   const businessHandoffs = [
     {
       label: "Ledger export",
-      target: "Registry → tenra Ledger",
+      target: "Registry → Ledger by Tenra",
       detail: "Review posted charges, payments, credits, deposits, refunds, and adjustments before bookkeeping handoff."
     },
     {
       label: "Document brief",
-      target: "Registry → tenra Assembly",
+      target: "Registry → Assembly by Tenra",
       detail: "Send customer, rental, unit, balance, and template context for approved paperwork or statements."
     }
   ] as const;

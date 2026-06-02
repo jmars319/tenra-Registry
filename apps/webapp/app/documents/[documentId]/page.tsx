@@ -133,7 +133,7 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
 
         <article className="document-sheet">
           <header className="document-sheet__header">
-            <p>tenra Registry</p>
+            <p>Registry by Tenra</p>
             <h2>{detail.document.title}</h2>
             {detail.document.subject ? <span>{detail.document.subject}</span> : null}
           </header>

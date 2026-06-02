@@ -26,7 +26,7 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: `${REGISTRY_APP_NAME} | tenra`,
-  description: "tenra Registry is an operating system for storage-container rentals, receivables, documents, and reports."
+  description: "Registry by Tenra is an operating system for storage-container rentals, receivables, documents, and reports."
 };
 
 export default function RootLayout({ children }: PropsWithChildren) {
