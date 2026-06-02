@@ -47,6 +47,7 @@ overrides:
   minimatch@3>brace-expansion: 1.1.14
   micromatch@4>picomatch: 2.3.2
   anymatch@3>picomatch: 2.3.2
+  plist: 4.0.0
 
 importers:
 
@@ -1137,8 +1138,8 @@ packages:
     resolution: {integrity: sha512-KZNxZvnGCtiM2aYYZ6Wz0Ix5r47dAvpNLApFtZWnSoERzAdOMzVBOPysBoM0JlF6FKWZ8GPqgn6qt3dV/8Zlpg==}
     hasBin: true
 
-  '@hono/node-server@2.0.3':
-    resolution: {integrity: sha512-a0jV+/HRe3G5zjFID3zObAQFdkl6zpxTuqktdDDXS3MJKcrZIkB8OkLpNBlY/WXFqv2HF4a0takPej+aNFczWA==}
+  '@hono/node-server@2.0.4':
+    resolution: {integrity: sha512-Ut3y0dMMPWy6bZ2kVfx25EOVbZlm15dhF4mOsezMlhpNHy+4MkU1qN9Y6lnruYi4wPmFzimGX2X7LF/FwHli4A==}
     engines: {node: '>=20'}
     peerDependencies:
       hono: '>=4.12.12'
@@ -1770,6 +1771,10 @@ packages:
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
     deprecated: Potential CWE-502 - Update to 1.3.1 or higher
+
+  '@xmldom/xmldom@0.8.13':
+    resolution: {integrity: sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw==}
+    engines: {node: '>=10.0.0'}
 
   '@xmldom/xmldom@0.9.10':
     resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
@@ -2995,8 +3000,8 @@ packages:
   hermes-parser@0.33.3:
     resolution: {integrity: sha512-Yg3HgaG4CqgyowtYjX/FsnPAuZdHOqSMtnbpylbptsQ9nwwSKsy6uRWcGO5RK0EqiX12q8HvDWKgeAVajRO5DA==}
 
-  hono@4.12.22:
-    resolution: {integrity: sha512-7fvVPbB92zNRsQke+uiRGwtTuef0tB2Dg4hWxYfFNvkQhIltWoyi0ONReM5LWA+jJWS3nfT5lTq+qbsIpX0IQw==}
+  hono@4.12.23:
+    resolution: {integrity: sha512-eIaZ9qDgu7XV0pxOCrg7/WhnQ6Ivm22UcxhXx/A3dcbqbbYgBEkc6e/J/s7j2tS96zoB0S9VBdLwQNCWwUo4LA==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@4.1.0:
@@ -4021,9 +4026,9 @@ packages:
   pkg-types@2.3.0:
     resolution: {integrity: sha512-SIqCzDRg0s9npO5XQ3tNZioRY1uK06lA41ynBC1YmFTmnY6FjUjVt6s4LoADmwoig1qqD0oK8h1p/8mlMx8Oig==}
 
-  plist@3.1.0:
-    resolution: {integrity: sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==}
-    engines: {node: '>=10.4.0'}
+  plist@4.0.0:
+    resolution: {integrity: sha512-4dOqNo0Y2NpfSf9q4+zr4bh7pzNWeckIam34Z0KYJhg8qtNNfh59VbD+Yna5SjwcxawVvLKx5w5FtuCijpEF4Q==}
+    engines: {node: '>=18'}
 
   pngjs@3.4.0:
     resolution: {integrity: sha512-NCrCHhWmnQklfH4MtJMRjZ2a8c80qXeMlQMv2uVp9ISJMTt562SbGd6n2oq0PaPgKm7Z6pL9E2UlLIhC+SHL3w==}
@@ -5641,7 +5646,7 @@ snapshots:
       fs-extra: 10.1.0
       isbinaryfile: 4.0.10
       minimist: 1.2.8
-      plist: 3.1.0
+      plist: 4.0.0
     transitivePeerDependencies:
       - supports-color
 
@@ -5664,7 +5669,7 @@ snapshots:
       dir-compare: 4.2.0
       fs-extra: 11.3.4
       minimatch: 9.0.9
-      plist: 3.1.0
+      plist: 4.0.0
     transitivePeerDependencies:
       - supports-color
 
@@ -6065,7 +6070,7 @@ snapshots:
 
   '@expo/plist@0.5.2':
     dependencies:
-      '@xmldom/xmldom': 0.9.10
+      '@xmldom/xmldom': 0.8.13
       base64-js: 1.5.1
       xmlbuilder: 15.1.1
 
@@ -6133,9 +6138,9 @@ snapshots:
       chalk: 4.1.2
       js-yaml: 4.1.1
 
-  '@hono/node-server@2.0.3(hono@4.12.22)':
+  '@hono/node-server@2.0.4(hono@4.12.23)':
     dependencies:
-      hono: 4.12.22
+      hono: 4.12.23
 
   '@humanfs/core@0.19.1': {}
 
@@ -6434,13 +6439,13 @@ snapshots:
       '@electric-sql/pglite': 0.3.15
       '@electric-sql/pglite-socket': 0.0.20(@electric-sql/pglite@0.3.15)
       '@electric-sql/pglite-tools': 0.2.20(@electric-sql/pglite@0.3.15)
-      '@hono/node-server': 2.0.3(hono@4.12.22)
+      '@hono/node-server': 2.0.4(hono@4.12.23)
       '@mrleebo/prisma-ast': 0.13.1
       '@prisma/get-platform': 7.2.0
       '@prisma/query-plan-executor': 7.2.0
       foreground-child: 3.3.1
       get-port-please: 3.2.0
-      hono: 4.12.22
+      hono: 4.12.23
       http-status-codes: 2.3.0
       pathe: 2.0.3
       proper-lockfile: 4.1.2
@@ -6877,6 +6882,8 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
+  '@xmldom/xmldom@0.8.13': {}
+
   '@xmldom/xmldom@0.9.10': {}
 
   abbrev@4.0.0: {}
@@ -6973,7 +6980,7 @@ snapshots:
       json5: 2.2.3
       lazy-val: 1.0.5
       minimatch: 10.2.4
-      plist: 3.1.0
+      plist: 4.0.0
       proper-lockfile: 4.1.2
       resedit: 1.7.2
       semver: 7.7.4
@@ -7639,7 +7646,7 @@ snapshots:
       ajv: 6.14.0
       crc: 3.8.0
       iconv-corefoundation: 1.1.7
-      plist: 3.1.0
+      plist: 4.0.0
       smart-buffer: 4.2.0
       verror: 1.10.1
     optional: true
@@ -8461,7 +8468,7 @@ snapshots:
     dependencies:
       hermes-estree: 0.33.3
 
-  hono@4.12.22: {}
+  hono@4.12.23: {}
 
   hosted-git-info@4.1.0:
     dependencies:
@@ -9701,10 +9708,9 @@ snapshots:
       exsolve: 1.0.8
       pathe: 2.0.3
 
-  plist@3.1.0:
+  plist@4.0.0:
     dependencies:
       '@xmldom/xmldom': 0.9.10
-      base64-js: 1.5.1
       xmlbuilder: 15.1.1
 
   pngjs@3.4.0: {}
@@ -10203,7 +10209,7 @@ snapshots:
     dependencies:
       bplist-creator: 0.1.0
       bplist-parser: 0.3.1
-      plist: 3.1.0
+      plist: 4.0.0
 
   simple-update-notifier@2.0.0:
     dependencies:
