@@ -1,0 +1,50 @@
+.rent-run-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(120px, 160px) minmax(180px, 240px) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.import-header-preview {
+  overflow-x: auto;
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid rgba(90, 66, 34, 0.08);
+  border-radius: var(--rg-radius-small);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--rg-color-muted);
+  font: 0.85rem/1.5 var(--rg-font-mono), monospace;
+}
+
+.import-workspace,
+.import-issue-list,
+.import-commit-form,
+.settings-grid,
+.settings-list {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-list {
+  margin: 16px 0 0;
+  padding-left: 1.1rem;
+  color: var(--rg-color-muted);
+  line-height: 1.55;
+}
+
+.report-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(90, 66, 34, 0.08);
+}
+
+.report-row:last-child {
+  border-bottom: 0;
+}

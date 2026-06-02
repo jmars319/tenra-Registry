@@ -11,7 +11,7 @@ loadEnvFile(envFile);
 
 const result = spawnSync("pnpm", ["exec", "prisma", ...process.argv.slice(2)], {
   cwd,
-  env: process.env,
+  env: { ...process.env, PRISMA_HIDE_UPDATE_MESSAGE: "1" },
   stdio: "inherit"
 });
 

@@ -18,7 +18,7 @@
 - `apps/webapp/src/server`: Prisma client setup, root env loading, and centralized operational data and lifecycle mutations
 - `apps/webapp/src/components/forms`: create forms powered by server actions
 - `apps/webapp/src/components/registry`: small admin UI helpers for the active slice, including assignment lifecycle actions
-- `apps/mobileapp`: third-surface placeholder Expo mobile shell
+- `apps/mobileapp`: third-surface Expo mobile companion shell
 
 ## Packages
 

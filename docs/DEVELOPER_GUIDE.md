@@ -41,7 +41,7 @@ The desktop app is the primary user-facing surface. It launches the production N
 - `pnpm typecheck`: run TypeScript across the monorepo
 - `pnpm verify:web`: lint, typecheck, check Prisma/database state, run the assignment lifecycle smoke flow, and build the web app
 - `pnpm verify:desktop`: lint, typecheck, and build the desktop launcher
-- `pnpm verify:mobile`: lint, typecheck, and export the mobile placeholder shell
+- `pnpm verify:mobile`: lint, typecheck, and export the mobile companion shell
 - `pnpm verify:all`: run every app verification sequence
 - `pnpm doctor`: run the full repository health sequence
 
@@ -68,7 +68,7 @@ The shared local machine baseline is useful for Registry maintenance:
 1. Extend the shared packages first if the new behavior changes domain language or contracts.
 2. Prefer keeping the local web runtime full-stack until the current vertical slice outgrows that shape.
 3. Add a separate backend app only when the current app boundary becomes a real constraint.
-4. Keep mobile third and thin until it has a clear, non-placeholder workflow to support.
+4. Keep mobile third and thin until it has a clear field workflow to support.
 5. Update the docs and repo map whenever the operational path changes.
 
 ## Current Lifecycle Rules

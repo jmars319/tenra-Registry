@@ -1,0 +1,299 @@
+{
+  "apiPublicExports": [
+    "buildRegistryAssemblyDocumentRequest",
+    "BuildRegistryAssemblyDocumentRequestInput",
+    "buildRegistryLedgerExport",
+    "BuildRegistryLedgerExportInput",
+    "CreateAccountStatementDocumentRequest",
+    "CreateAssetRequest",
+    "CreateAssetResponse",
+    "CreateAssignmentRequest",
+    "CreateAssignmentResponse",
+    "CreateCustomerRequest",
+    "CreateCustomerResponse",
+    "CreateDocumentTemplateRequest",
+    "CreateDocumentTemplateResponse",
+    "CreateGeneratedDocumentRequest",
+    "CreateGeneratedDocumentResponse",
+    "CreateOrganizationRequest",
+    "CreateOrganizationResponse",
+    "CreateReceivableEntryRequest",
+    "CreateReceivableEntryResponse",
+    "ListAssetsRequest",
+    "ListAssetsResponse",
+    "ListAssignmentsRequest",
+    "ListAssignmentsResponse",
+    "ListCustomersRequest",
+    "ListCustomersResponse",
+    "ListReceivableEntriesRequest",
+    "ListReceivableEntriesResponse",
+    "PostRentRunRequest",
+    "PostRentRunResponse",
+    "RegistryAssemblyDocumentRequest",
+    "RegistryLedgerExport",
+    "RegistryLedgerExportRow",
+    "SaveGeneratedDocumentDraftRequest",
+    "stableHandoffHash",
+    "stableRegistryExportId",
+    "TransitionAssignmentStatusRequest",
+    "TransitionAssignmentStatusResponse",
+    "UpdateGeneratedDocumentStatusRequest"
+  ],
+  "desktopBridgeMethods": [],
+  "desktopMenuLabels": [
+    "Close Window",
+    "Edit",
+    "Quit",
+    "Settings...",
+    "Window"
+  ],
+  "domainPublicExports": [
+    "Asset",
+    "assetCategories",
+    "AssetCategory",
+    "AssetStatus",
+    "assetStatuses",
+    "Assignment",
+    "AssignmentStatus",
+    "assignmentStatuses",
+    "AssignmentTransitionTarget",
+    "assignmentTransitionTargets",
+    "BalanceState",
+    "balanceStates",
+    "BillingCadence",
+    "billingCadences",
+    "canTransitionAssignmentStatus",
+    "Customer",
+    "CustomerBalanceSummary",
+    "CustomerStatus",
+    "customerStatuses",
+    "deriveBalanceState",
+    "DocumentTemplate",
+    "DocumentTemplateType",
+    "documentTemplateTypes",
+    "formatUsdCents",
+    "GeneratedDocument",
+    "GeneratedDocumentStatus",
+    "generatedDocumentStatuses",
+    "getAllowedAssignmentTransitions",
+    "getDocumentTemplateTypeLabel",
+    "getInvoiceOutstandingAmount",
+    "getReceivableEntryTypeLabel",
+    "Invoice",
+    "InvoiceLineItem",
+    "InvoiceStatus",
+    "invoiceStatuses",
+    "isAssignmentActive",
+    "isOrganizationOperational",
+    "isReceivableCreditType",
+    "normalizeReceivableAmount",
+    "OperatorAccess",
+    "Organization",
+    "OrganizationStatus",
+    "organizationStatuses",
+    "ReceivableEntry",
+    "ReceivableEntryStatus",
+    "receivableEntryStatuses",
+    "ReceivableEntryType",
+    "receivableEntryTypes",
+    "summarizeReceivableEntries"
+  ],
+  "handoffSchemas": [
+    "tenra-registry.assembly-document-request.v1",
+    "tenra-registry.ledger-export.v1"
+  ],
+  "packageExports": {
+    "packages": {
+      "@registry/api-contracts": {
+        ".": "./src/index.ts"
+      },
+      "@registry/auth": {
+        ".": "./src/index.ts"
+      },
+      "@registry/config": {
+        ".": "./src/index.ts"
+      },
+      "@registry/domain": {
+        ".": "./src/index.ts"
+      },
+      "@registry/shared-types": {
+        ".": "./src/index.ts"
+      },
+      "@registry/ui": {
+        ".": "./src/index.ts"
+      },
+      "@registry/validation": {
+        ".": "./src/index.ts"
+      }
+    }
+  },
+  "prisma": {
+    "enums": [
+      "AssetCategory",
+      "AssetStatus",
+      "AssignmentStatus",
+      "BillingCadence",
+      "CustomerStatus",
+      "DocumentTemplateType",
+      "GeneratedDocumentStatus",
+      "ImportBatchStatus",
+      "ImportRecordAction",
+      "OrganizationStatus",
+      "ReceivableEntryStatus",
+      "ReceivableEntryType"
+    ],
+    "models": [
+      "Asset",
+      "Assignment",
+      "Customer",
+      "DocumentTemplate",
+      "GeneratedDocument",
+      "HandoffAudit",
+      "ImportBatch",
+      "ImportRecord",
+      "Organization",
+      "ReceivableEntry"
+    ]
+  },
+  "routes": [
+    {
+      "kind": "route",
+      "methods": [
+        "GET"
+      ],
+      "path": "/api/handoffs/assembly-document-request"
+    },
+    {
+      "kind": "route",
+      "methods": [
+        "POST"
+      ],
+      "path": "/api/handoffs/audits/[exportId]/status"
+    },
+    {
+      "kind": "route",
+      "methods": [
+        "GET"
+      ],
+      "path": "/api/handoffs/ledger-export"
+    },
+    {
+      "kind": "route",
+      "methods": [
+        "POST"
+      ],
+      "path": "/api/handoffs/received"
+    },
+    {
+      "kind": "route",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "path": "/api/handoffs/replay/[exportId]"
+    },
+    {
+      "kind": "page",
+      "path": "/assets/[assetId]"
+    },
+    {
+      "kind": "page",
+      "path": "/assets"
+    },
+    {
+      "kind": "page",
+      "path": "/assignments/[assignmentId]"
+    },
+    {
+      "kind": "page",
+      "path": "/assignments"
+    },
+    {
+      "kind": "page",
+      "path": "/customers/[customerId]"
+    },
+    {
+      "kind": "page",
+      "path": "/customers"
+    },
+    {
+      "kind": "route",
+      "methods": [
+        "GET"
+      ],
+      "path": "/documents/[documentId]/pdf"
+    },
+    {
+      "kind": "page",
+      "path": "/documents/[documentId]"
+    },
+    {
+      "kind": "page",
+      "path": "/documents"
+    },
+    {
+      "kind": "page",
+      "path": "/handoffs/[exportId]"
+    },
+    {
+      "kind": "page",
+      "path": "/handoffs"
+    },
+    {
+      "kind": "route",
+      "methods": [
+        "GET"
+      ],
+      "path": "/imports/[dataset]"
+    },
+    {
+      "kind": "page",
+      "path": "/imports"
+    },
+    {
+      "kind": "page",
+      "path": "/invoices"
+    },
+    {
+      "kind": "page",
+      "path": "/"
+    },
+    {
+      "kind": "page",
+      "path": "/receivables"
+    },
+    {
+      "kind": "page",
+      "path": "/rent-run"
+    },
+    {
+      "kind": "page",
+      "path": "/reports"
+    },
+    {
+      "kind": "page",
+      "path": "/settings"
+    }
+  ],
+  "validationPublicExports": [
+    "createAccountStatementDocumentSchema",
+    "createAssetSchema",
+    "createAssignmentSchema",
+    "createCustomerSchema",
+    "createDocumentTemplateSchema",
+    "createGeneratedDocumentSchema",
+    "createOrganizationSchema",
+    "createReceivableEntrySchema",
+    "listAssetsSchema",
+    "listAssignmentsSchema",
+    "listCustomersSchema",
+    "listOrganizationsSchema",
+    "postRentRunSchema",
+    "registryAssemblyDocumentRequestSchema",
+    "registryLedgerExportRowSchema",
+    "registryLedgerExportSchema",
+    "saveGeneratedDocumentDraftSchema",
+    "transitionAssignmentStatusSchema",
+    "updateGeneratedDocumentStatusSchema"
+  ]
+}

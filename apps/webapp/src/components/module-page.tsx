@@ -17,12 +17,12 @@ export function ModulePage({ title, summary, statusNote }: ModulePageProps) {
 
       <div className="placeholder-grid">
         <article className="panel-card">
-          <h2>Current module state</h2>
+          <h2>Current operations state</h2>
           <p>{statusNote}</p>
         </article>
         <article className="panel-card">
-          <h2>Expected next work</h2>
-          <p>Connect this module to API handlers, persistence, and the rental operations workflow.</p>
+          <h2>Operational path</h2>
+          <p>Use this module to keep rental activity aligned with the customer, unit, receivable, and document records.</p>
         </article>
       </div>
 

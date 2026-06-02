@@ -8,6 +8,7 @@ on:
 jobs:
   validate:
     runs-on: macos-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v5
@@ -26,5 +27,17 @@ jobs:
         run: echo "DATABASE_URL=postgresql://registry:registry@localhost:5432/registry" > .env
       - name: Generate Prisma Client
         run: pnpm --filter @registry/webapp db:generate
+      - name: Run lint
+        run: pnpm run lint
       - name: Run typecheck
         run: pnpm run typecheck
+      - name: Build web app
+        run: pnpm run build:web
+      - name: Build desktop launcher
+        run: pnpm --filter @registry/desktopapp build
+      - name: Verify handoff replay
+        run: pnpm run verify:replay
+      - name: Run maintainability audit
+        run: pnpm run audit:maintainability -- --strict
+      - name: Run bundle budget
+        run: pnpm run budget:bundle

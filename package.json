@@ -30,8 +30,11 @@
     "verify:mobile": "pnpm --filter @registry/mobileapp verify",
     "verify:handoffs": "node ./scripts/validate-handoffs.mjs",
     "verify:replay": "node ./scripts/verify-handoff-replay.mjs",
-    "verify:all": "pnpm verify:web && pnpm verify:desktop && pnpm verify:mobile",
-    "doctor": "node ./scripts/doctor.mjs"
+    "verify:all": "pnpm run verify:web && pnpm run verify:desktop && pnpm run verify:mobile && pnpm run verify:handoffs && pnpm run verify:replay && pnpm run audit:maintainability && pnpm run budget:bundle",
+    "doctor": "node ./scripts/doctor.mjs",
+    "analyze:bundle": "node scripts/analyze-build.mjs",
+    "budget:bundle": "node scripts/analyze-build.mjs --strict",
+    "audit:maintainability": "node scripts/audit-maintainability.mjs --strict"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

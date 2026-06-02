@@ -28,7 +28,7 @@ maintenanceUrl.search = "";
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: repoRoot,
-    env: { ...process.env, DATABASE_URL: databaseUrl },
+    env: { ...process.env, DATABASE_URL: databaseUrl, PRISMA_HIDE_UPDATE_MESSAGE: "1" },
     encoding: "utf8",
     stdio: options.stdio ?? "pipe"
   });

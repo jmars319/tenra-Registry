@@ -8,7 +8,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const files = {
   detailPage: "apps/webapp/app/handoffs/[exportId]/page.tsx",
   replayRoute: "apps/webapp/app/api/handoffs/replay/[exportId]/route.ts",
-  registryData: "apps/webapp/src/server/registry-data.ts"
+  registryData: "apps/webapp/src/server/registry-data/handoffs.ts"
 };
 
 function read(relativePath) {

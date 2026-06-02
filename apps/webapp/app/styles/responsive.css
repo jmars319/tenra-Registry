@@ -1,0 +1,54 @@
+@media (max-width: 1080px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(90, 66, 34, 0.12);
+  }
+
+  .metric-grid,
+  .module-grid,
+  .placeholder-grid,
+  .overview-grid,
+  .settings-grid,
+  .workspace-grid,
+  .detail-grid,
+  .rent-run-controls,
+  .document-step-grid,
+  .document-template-grid,
+  .document-preview-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar,
+  .content {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .field-grid,
+  .field-grid--thirds {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions,
+  .activity-item__heading,
+  .lifecycle-action,
+  .document-list-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .document-sheet {
+    padding: 28px;
+  }
+}

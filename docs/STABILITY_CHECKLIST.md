@@ -12,7 +12,7 @@
 - [ ] `pnpm verify:web` passes for the persistence-backed web slice
 - [ ] `pnpm verify:desktop` still passes for the desktop launcher
 - [ ] `pnpm install:desktop` installs one `/Applications/tenra Registry.app` copy
-- [ ] `pnpm verify:mobile` still passes for the placeholder mobile shell
+- [ ] `pnpm verify:mobile` still passes for the mobile companion shell
 - [ ] creating a customer, asset, and assignment works end to end in the web app
 - [ ] active assignments cannot double-occupy the same asset
 - [ ] completing or cancelling an active assignment releases the asset back to `available`

@@ -1,9 +1,11 @@
-import { app, BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from "electron";
+import { app, BrowserWindow, shell } from "electron";
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
 import net from "node:net";
 import path from "node:path";
+import { buildApplicationMenu } from "./desktop/menu";
+import { showStatus } from "./desktop/statusPage";
 
 declare const __REGISTRY_REPO_ROOT__: string;
 
@@ -34,74 +36,6 @@ function logDesktop(message: string, error?: unknown) {
   } catch {
     // Logging must never be the reason the desktop app fails to start.
   }
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function statusDocument(title: string, body: string, details = "") {
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(title)}</title>
-    <style>
-      :root {
-        color-scheme: dark;
-        font-family: Inter, "Avenir Next", Arial, sans-serif;
-        background: #0D0D0F;
-        color: #f2f2f5;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-      }
-      main {
-        width: min(760px, calc(100vw - 48px));
-        border: 1px solid rgba(242, 242, 245, 0.14);
-        border-radius: 8px;
-        background: #1E1E22;
-        padding: 28px;
-        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
-      }
-      p {
-        line-height: 1.55;
-        color: #A0A0A0;
-      }
-      pre {
-        max-height: 280px;
-        overflow: auto;
-        white-space: pre-wrap;
-        border-radius: 6px;
-        background: #211f1a;
-        color: #f8f1df;
-        padding: 14px;
-        font-size: 12px;
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>${escapeHtml(title)}</h1>
-      <p>${escapeHtml(body)}</p>
-      ${details ? `<pre>${escapeHtml(details)}</pre>` : ""}
-    </main>
-  </body>
-</html>`;
-}
-
-async function showStatus(title: string, body: string, details = "") {
-  if (!mainWindow) return;
-  await mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(statusDocument(title, body, details))}`);
 }
 
 function resolvePnpmCommand() {
@@ -326,63 +260,6 @@ async function startRegistryServer() {
   return baseUrl;
 }
 
-function buildApplicationMenu() {
-  const template: MenuItemConstructorOptions[] = [
-    {
-      label: appName,
-      submenu: [
-        { role: "about" },
-        { type: "separator" },
-        {
-          label: "Settings...",
-          accelerator: "CommandOrControl+,",
-          click: () => {
-            if (!registryBaseUrl) {
-              mainWindow?.show();
-              mainWindow?.focus();
-              return;
-            }
-
-            void mainWindow?.loadURL(`${registryBaseUrl}/settings`);
-            mainWindow?.show();
-            mainWindow?.focus();
-          },
-        },
-        {
-          label: "Close Window",
-          accelerator: "CommandOrControl+W",
-          click: () => {
-            BrowserWindow.getFocusedWindow()?.close();
-          },
-        },
-        {
-          label: "Quit",
-          accelerator: "CommandOrControl+Q",
-          click: () => app.quit(),
-        },
-      ],
-    },
-    {
-      label: "Edit",
-      submenu: [
-        { role: "undo" },
-        { role: "redo" },
-        { type: "separator" },
-        { role: "cut" },
-        { role: "copy" },
-        { role: "paste" },
-        { role: "selectAll" },
-      ],
-    },
-    {
-      label: "Window",
-      submenu: [{ role: "minimize" }, { role: "zoom" }],
-    },
-  ];
-
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-}
-
 async function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1320,
@@ -406,7 +283,7 @@ async function createMainWindow() {
     mainWindow = undefined;
   });
 
-  await showStatus(appName, "Starting the local Registry web app and checking the Postgres-backed dashboard.");
+  await showStatus(mainWindow, appName, "Starting the local Registry web app and checking the Postgres-backed dashboard.");
 
   try {
     const baseUrl = await startRegistryServer();
@@ -416,6 +293,7 @@ async function createMainWindow() {
     logDesktop("startup failed", error);
     const message = error instanceof Error ? error.message : String(error);
     await showStatus(
+      mainWindow,
       "Registry could not start",
       `${message} Registry loads .env/.env.local and defaults to ${defaultDatabaseUrl}; check that local Postgres is running, the registry database exists, migrations are applied, and the local repo path is correct.`,
       serverLog,
@@ -433,7 +311,11 @@ function stopRegistryServer() {
 app.setName(appName);
 
 app.whenReady().then(() => {
-  buildApplicationMenu();
+  buildApplicationMenu({
+    appName,
+    getMainWindow: () => mainWindow,
+    getRegistryBaseUrl: () => registryBaseUrl,
+  });
   void createMainWindow();
 
   app.on("activate", () => {

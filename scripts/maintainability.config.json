@@ -1,0 +1,100 @@
+{
+  "label": "tenra-registry-monorepo",
+  "sourceRoots": [
+    "apps",
+    "packages",
+    "scripts"
+  ],
+  "sourceExtensions": [
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".css"
+  ],
+  "ignoredSegments": [],
+  "maxImplementationFileLines": 525,
+  "maxStyleFileLines": 220,
+  "maxAppShellLines": 120,
+  "maxDesktopMainLines": 370,
+  "maxDomainBarrelLines": 250,
+  "nearBudgetLineThreshold": 20,
+  "failOnNearBudgetWarnings": true,
+  "specificFileBudgets": {
+    "scripts/analyze-build.mjs": 150,
+    "scripts/audit-maintainability.mjs": 340
+  },
+  "generatedPathPatterns": [
+    "/.next/",
+    "/.turbo/",
+    "/.vite/",
+    "/coverage/",
+    "/dist/",
+    "/out/",
+    "/target/",
+    "/web-build/",
+    ".tsbuildinfo"
+  ],
+  "allowedGeneratedPathPatterns": [
+    "apps/desktopapp/src/vite-env.d.ts",
+    "apps/webapp/next-env.d.ts"
+  ],
+  "bannedImportSpecifiers": [
+    "/.next/",
+    "/dist/",
+    "/node_modules/",
+    "/target/"
+  ],
+  "startupImportBans": [
+    {
+      "files": [
+        "apps/desktopapp/src/main.ts",
+        "apps/desktopapp/src/desktop/menu.ts",
+        "apps/webapp/app/layout.tsx",
+        "apps/webapp/src/components/app-shell.tsx"
+      ],
+      "specifiers": [
+        "@prisma/client",
+        "import-processor",
+        "registry-data"
+      ]
+    }
+  ],
+  "requiredStyleImports": [
+    "./styles/base.css",
+    "./styles/shell.css",
+    "./styles/cards.css",
+    "./styles/forms.css",
+    "./styles/tables.css",
+    "./styles/documents.css",
+    "./styles/reports-settings.css",
+    "./styles/responsive.css",
+    "./styles/print.css",
+    "./styles/visual-standard.css"
+  ],
+  "contractSnapshotPath": "scripts/contracts/registry-contracts.json",
+  "requireBuiltAssets": true,
+  "initialBundleBudgetKb": 230,
+  "nearBundleBudgetKb": 4,
+  "chunkBudgets": [
+    {
+      "name": "web largest static JS",
+      "pattern": "^apps/webapp/\\.next/static/chunks/.+\\.js$",
+      "budgetKb": 230
+    },
+    {
+      "name": "desktop launcher JS",
+      "pattern": "^apps/desktopapp/dist/main\\.cjs$",
+      "budgetKb": 20
+    }
+  ],
+  "nearAssetBudgetBytes": 4096,
+  "assetBudgets": {
+    "apps/desktopapp/assets/icon.png": 145000,
+    "apps/desktopapp/assets/icon-1024.png": 148000,
+    "apps/desktopapp/assets/icon.ico": 135000,
+    "apps/desktopapp/assets/icon.icns": 560000
+  }
+}

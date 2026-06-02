@@ -9,6 +9,8 @@ const envFile = path.resolve(repoRoot, ".env");
 
 loadEnvFile(envFile);
 
+const prismaEnv = { ...process.env, PRISMA_HIDE_UPDATE_MESSAGE: "1" };
+
 const steps = [
   ["pnpm", ["exec", "prisma", "validate"]],
   ["pnpm", ["exec", "prisma", "migrate", "status"]]
@@ -17,7 +19,7 @@ const steps = [
 for (const [command, args] of steps) {
   const result = spawnSync(command, args, {
     cwd,
-    env: process.env,
+    env: prismaEnv,
     stdio: "inherit"
   });
 

@@ -1,0 +1,37 @@
+@media print {
+  body {
+    background: #1E1E22;
+  }
+
+  .sidebar,
+  .topbar,
+  .form-stack,
+  .button-primary,
+  .button-secondary,
+  .no-print {
+    display: none !important;
+  }
+
+  .shell,
+  .main-panel,
+  .content,
+  .document-preview-layout {
+    display: block;
+    padding: 0;
+  }
+
+  .hero-card,
+  .panel-card,
+  .metric-card,
+  .document-card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .document-sheet {
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,134 @@
+.shell {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px 24px;
+  background: rgba(255, 250, 242, 0.8);
+  border-right: 1px solid rgba(90, 66, 34, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+.sidebar__brand {
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar__brand h1,
+.topbar h2,
+.hero-card h1,
+.section-heading h2,
+.module-card h3,
+.queue-item h3,
+.panel-card h2 {
+  margin: 0;
+  font-family: var(--rg-font-display), sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.sidebar__copy,
+.hero-card__summary,
+.panel-card p,
+.queue-item p,
+.module-card p {
+  margin: 0;
+  color: var(--rg-color-muted);
+  line-height: 1.6;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--rg-color-muted);
+  font-family: var(--rg-font-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.nav-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-link {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--rg-radius-small);
+  color: var(--rg-color-muted);
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.nav-link:hover,
+.nav-link--active {
+  color: var(--rg-color-text);
+  background: rgba(255, 255, 255, 0.72);
+  border-color: var(--rg-color-border);
+}
+
+.sidebar__footnote {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid rgba(90, 66, 34, 0.12);
+  color: var(--rg-color-muted);
+  font-size: 0.85rem;
+}
+
+.main-panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px 32px 18px;
+}
+
+.topbar__badge,
+.pill,
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-family: var(--rg-font-mono), monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.topbar__badge,
+.pill {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--rg-color-border);
+}
+
+.pill--warning {
+  background: var(--rg-color-warning-soft);
+  border-color: rgba(161, 77, 42, 0.24);
+}
+
+.content,
+.stack {
+  display: grid;
+  gap: 24px;
+}
+
+.content {
+  padding: 0 32px 32px;
+}
