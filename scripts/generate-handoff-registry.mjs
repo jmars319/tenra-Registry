@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
+ * Handoff annotations stay in source so generated docs fail fast when suite contracts drift.
  * @tenra-handoff tenra-registry.ledger-export.v1 | Registry | Ledger
  * @tenra-handoff tenra-registry.assembly-document-request.v1 | Registry | Assembly
  */

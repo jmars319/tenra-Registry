@@ -40,7 +40,7 @@ try {
   await access(envLocalFile, constants.F_OK);
   loadEnvFile(fileURLToPath(envLocalFile));
 } catch {
-  // .env.local is optional.
+  // Local overrides must stay optional because the desktop app has a default database URL.
 }
 
 const checks = [
