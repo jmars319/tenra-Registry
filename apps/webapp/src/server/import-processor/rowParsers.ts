@@ -15,6 +15,7 @@ import type {
   UnitImportRow
 } from "./types";
 
+// Customer CSV boundary
 export function parseCustomers(rows: Array<Record<string, string>>, issues: ImportIssue[]): CustomerImportRow[] {
   validateUniqueCodes(issues, "customers", rows, "customer_code");
 
@@ -49,6 +50,7 @@ export function parseCustomers(rows: Array<Record<string, string>>, issues: Impo
   });
 }
 
+// Unit CSV boundary
 export function parseUnits(rows: Array<Record<string, string>>, issues: ImportIssue[]): UnitImportRow[] {
   validateUniqueCodes(issues, "units", rows, "unit_code");
 
@@ -90,6 +92,7 @@ export function parseUnits(rows: Array<Record<string, string>>, issues: ImportIs
   });
 }
 
+// Rental CSV boundary
 export function parseRentals(rows: Array<Record<string, string>>, issues: ImportIssue[]): RentalImportRow[] {
   validateUniqueCodes(issues, "rentals", rows, "rental_code");
 
@@ -154,6 +157,7 @@ export function parseRentals(rows: Array<Record<string, string>>, issues: Import
   });
 }
 
+// Balance CSV boundary
 export function parseOpeningBalances(rows: Array<Record<string, string>>, issues: ImportIssue[]): OpeningBalanceImportRow[] {
   validateUniqueCodes(issues, "opening-balances", rows, "entry_code");
 
@@ -225,6 +229,7 @@ export function parseOpeningBalances(rows: Array<Record<string, string>>, issues
   });
 }
 
+// Payment CSV boundary
 export function parsePaymentHistory(rows: Array<Record<string, string>>, issues: ImportIssue[]): PaymentHistoryImportRow[] {
   validateUniqueCodes(issues, "payment-history", rows, "payment_code");
 

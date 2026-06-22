@@ -25,6 +25,7 @@ import type {
   ReceivableCustomerOption
 } from "./types";
 
+// Template library boundary
 export async function listDocumentTemplates(): Promise<DocumentTemplate[]> {
   const organization = await getDefaultOrganization();
 
@@ -72,6 +73,7 @@ export async function createDocumentTemplate(input: CreateDocumentTemplateReques
   return serializeDocumentTemplate(template);
 }
 
+// Merge field boundary
 function renderTemplateText(templateText: string | null | undefined, values: Record<string, string>): string | null {
   if (!templateText) {
     return null;
@@ -98,6 +100,7 @@ function formatAssignmentSite(assignment: {
     .join("\n");
 }
 
+// Document option boundary
 export async function getDocumentFormOptions(): Promise<{
   organization: Organization;
   templates: DocumentTemplate[];
@@ -211,6 +214,7 @@ export async function getGeneratedDocumentDetail(documentId: string): Promise<Ge
   };
 }
 
+// Document preview boundary
 export async function previewGeneratedDocument(input: CreateGeneratedDocumentRequest): Promise<GeneratedDocumentDraft> {
   const organization = await getDefaultOrganization();
 
@@ -318,6 +322,7 @@ export async function previewGeneratedDocument(input: CreateGeneratedDocumentReq
   };
 }
 
+// Draft persistence boundary
 export async function createGeneratedDocument(input: CreateGeneratedDocumentRequest): Promise<GeneratedDocument> {
   const organization = await getDefaultOrganization();
   const draft = await previewGeneratedDocument(input);

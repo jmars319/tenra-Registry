@@ -11,6 +11,7 @@ import type {
 } from "@registry/domain";
 import type { Prisma } from "@prisma/client";
 
+// Sort priority boundary
 export const customerStatusOrder = new Map<CustomerStatus, number>([
   ["active", 0],
   ["inactive", 1],
@@ -59,6 +60,7 @@ export type PrismaDocumentTemplateType =
   | "GENERAL_LETTER";
 export type PrismaGeneratedDocumentStatus = "DRAFT" | "PRINTED" | "EMAILED" | "ARCHIVED";
 
+// Date normalization boundary
 export function normalizeOptionalString(value: string | null): string | undefined {
   return value ?? undefined;
 }
@@ -83,6 +85,7 @@ export function getTodayIsoDate(): string {
   return dateToIsoDate(new Date());
 }
 
+// Rent period boundary
 export function getDefaultRentRunPeriod(): string {
   return getTodayIsoDate().slice(0, 7);
 }
@@ -135,6 +138,7 @@ export function formatRentRunPeriodLabel(period: string): string {
   return monthPeriodFormatter.format(parseDateOnly(`${period}-01`));
 }
 
+// Prisma status boundary
 export function prismaStatusToOrganizationStatus(value: "ACTIVE" | "INACTIVE"): OrganizationStatus {
   return value.toLowerCase() as OrganizationStatus;
 }
@@ -193,6 +197,7 @@ export function prismaGeneratedDocumentStatusToDomain(value: PrismaGeneratedDocu
   return value.toLowerCase() as GeneratedDocumentStatus;
 }
 
+// Transition safety boundary
 export function getAssetActivationErrorMessage(assetStatus: AssetStatus): string | null {
   switch (assetStatus) {
     case "available":

@@ -6,6 +6,7 @@ import { parseCustomers, parseOpeningBalances, parsePaymentHistory, parseRentals
 import { datasetKeys } from "./types";
 import type { CsvTable, ImportDatasetKey, ImportDatasetPreview, ImportDryRunResult, ImportIssue, ImportPayloads, NormalizedImport } from "./types";
 
+// CSV normalization boundary
 export function normalizeImport(payloads: ImportPayloads): NormalizedImport {
   const issues: ImportIssue[] = [];
   const parsedTables = new Map<ImportDatasetKey, CsvTable>();
@@ -48,6 +49,7 @@ export function getDatasetPreview(key: ImportDatasetKey, rowCount: number): Impo
   };
 }
 
+// Duplicate detection boundary
 export async function addExistingRecordIssues(normalized: NormalizedImport, organizationId: string): Promise<void> {
   const [customers, units, rentals, entries] = await Promise.all([
     normalized.customers.length > 0
@@ -168,6 +170,7 @@ export async function addExistingRecordIssues(normalized: NormalizedImport, orga
   });
 }
 
+// Cross-reference boundary
 export async function addCrossReferenceIssues(normalized: NormalizedImport, organizationId: string): Promise<void> {
   const fileCustomerCodes = new Set(normalized.customers.map((row) => row.customerCode));
   const fileUnitCodes = new Set(normalized.units.map((row) => row.unitCode));
@@ -311,6 +314,7 @@ export async function addCrossReferenceIssues(normalized: NormalizedImport, orga
   });
 }
 
+// Dry-run result boundary
 export async function dryRunRegistryImport(payloads: ImportPayloads): Promise<ImportDryRunResult> {
   const organization = await getDefaultOrganization();
   const normalized = normalizeImport(payloads);

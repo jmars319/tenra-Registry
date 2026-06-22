@@ -36,6 +36,7 @@ type ReplayPayloadResult = {
   payloadSummary: Record<string, unknown>;
 };
 
+// Replay payload boundary
 async function buildReplayPayload(exportId: string): Promise<ReplayPayloadResult | { error: string; status: number }> {
   const audit = await getHandoffAuditByExportId(exportId);
 
@@ -117,6 +118,7 @@ async function buildReplayPayload(exportId: string): Promise<ReplayPayloadResult
   return { error: "This handoff cannot be replayed.", status: 400 };
 }
 
+// Replay audit boundary
 async function recordReplay(result: ReplayPayloadResult) {
   const replayPayload = result.payload as { exportId: string; schema: string };
   return recordHandoffAudit({
@@ -133,12 +135,14 @@ async function recordReplay(result: ReplayPayloadResult) {
   });
 }
 
+// Replay error boundary
 function isReplayError(
   result: ReplayPayloadResult | { error: string; status: number }
 ): result is { error: string; status: number } {
   return "error" in result;
 }
 
+// JSON replay boundary
 export async function GET(_request: Request, { params }: Params) {
   try {
     const { exportId } = await params;
@@ -156,6 +160,7 @@ export async function GET(_request: Request, { params }: Params) {
   }
 }
 
+// Direct delivery boundary
 export async function POST(request: Request, { params }: Params) {
   try {
     const { exportId } = await params;

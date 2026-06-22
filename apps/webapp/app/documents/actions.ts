@@ -37,6 +37,7 @@ export interface GeneratedDocumentFormActionState extends FormActionState {
   preview?: GeneratedDocumentDraft | undefined;
 }
 
+// Form parsing boundary
 function getBooleanFormValue(formData: FormData, key: string): boolean {
   return formData.get(key) === "on";
 }
@@ -48,6 +49,7 @@ function getMergeFields(formData: FormData): string[] {
     .filter((field) => field.length > 0);
 }
 
+// Template action boundary
 export async function createDocumentTemplateAction(
   _previousState: FormActionState,
   formData: FormData
@@ -92,6 +94,7 @@ export async function createDocumentTemplateAction(
   };
 }
 
+// Generated document boundary
 export async function createGeneratedDocumentAction(
   _previousState: FormActionState,
   formData: FormData
@@ -133,6 +136,7 @@ export async function createGeneratedDocumentAction(
   };
 }
 
+// Preview action boundary
 export async function previewGeneratedDocumentAction(
   _previousState: GeneratedDocumentFormActionState,
   formData: FormData
@@ -213,6 +217,7 @@ export async function saveGeneratedDocumentDraftAction(
   };
 }
 
+// Statement action boundary
 export async function createAccountStatementDocumentAction(
   _previousState: FormActionState,
   formData: FormData
@@ -250,6 +255,7 @@ export async function createAccountStatementDocumentAction(
   };
 }
 
+// Status update boundary
 async function updateDocumentStatusAction(
   documentId: string,
   status: UpdateGeneratedDocumentStatusRequest["status"]

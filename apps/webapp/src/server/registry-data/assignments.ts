@@ -32,6 +32,7 @@ import type {
   AssignmentListItem
 } from "./types";
 
+// Assignment listing boundary
 export async function listAssignments(): Promise<AssignmentListItem[]> {
   const organization = await getDefaultOrganization();
 
@@ -69,6 +70,7 @@ export async function listAssignments(): Promise<AssignmentListItem[]> {
   );
 }
 
+// Assignment detail boundary
 export async function getAssignmentDetail(assignmentId: string): Promise<AssignmentDetail | null> {
   const organization = await getDefaultOrganization();
 
@@ -142,6 +144,7 @@ export async function getAssignmentDetail(assignmentId: string): Promise<Assignm
   };
 }
 
+// Assignment form boundary
 export async function getAssignmentFormOptions(): Promise<{
   organization: Organization;
   customers: Array<{ id: string; label: string }>;
@@ -196,6 +199,7 @@ export async function getAssignmentFormOptions(): Promise<{
   };
 }
 
+// Assignment creation boundary
 export async function createAssignment(input: CreateAssignmentRequest): Promise<Assignment> {
   const organization = await getDefaultOrganization();
 
@@ -295,6 +299,7 @@ export async function createAssignment(input: CreateAssignmentRequest): Promise<
   }
 }
 
+// Lifecycle transition boundary
 export async function transitionAssignmentStatus(
   input: TransitionAssignmentStatusRequest
 ): Promise<AssignmentLifecycleResult> {

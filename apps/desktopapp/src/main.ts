@@ -17,11 +17,11 @@ const repoRoot = process.env.TENRA_REGISTRY_REPO_ROOT || __REGISTRY_REPO_ROOT__;
 const webappDir = path.resolve(repoRoot, "apps/webapp");
 const nextBuildIdPath = path.resolve(webappDir, ".next/BUILD_ID");
 
+// Desktop runtime boundary
 let mainWindow: BrowserWindow | undefined;
 let serverProcess: ChildProcess | undefined;
 let serverLog = "";
 let registryBaseUrl: string | undefined;
-
 function appendServerLog(chunk: Buffer | string) {
   serverLog = `${serverLog}${chunk.toString()}`.slice(-12_000);
   logDesktop(chunk.toString().trimEnd());
@@ -37,7 +37,6 @@ function logDesktop(message: string, error?: unknown) {
     // Logging must never be the reason the desktop app fails to start.
   }
 }
-
 function resolvePnpmCommand() {
   const homeDir = process.env.HOME || app.getPath("home");
   const packageManagerVersion = (() => {
@@ -107,7 +106,6 @@ function getLaunchEnv(extraPaths: string[] = []) {
   delete env.ELECTRON_RUN_AS_NODE;
   return env;
 }
-
 function parseEnvFile(filePath: string) {
   if (!fs.existsSync(filePath)) {
     return;

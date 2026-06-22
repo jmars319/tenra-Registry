@@ -9,6 +9,7 @@ import type {
 } from "@registry/domain";
 import type { EntityId } from "@registry/shared-types";
 
+// Organization customer contract
 export interface CreateOrganizationRequest {
   name: string;
   slug: string;
@@ -72,6 +73,7 @@ export interface ListAssetsResponse {
   assets: Asset[];
 }
 
+// Inventory rental contract
 export interface CreateAssignmentRequest {
   organizationId: EntityId;
   customerId: EntityId;
@@ -121,6 +123,7 @@ export interface ListAssignmentsResponse {
   assignments: Assignment[];
 }
 
+// Receivable rent contract
 export interface CreateReceivableEntryRequest {
   organizationId: EntityId;
   customerId: EntityId;
@@ -164,6 +167,7 @@ export interface ListReceivableEntriesResponse {
   entries: ReceivableEntry[];
 }
 
+// Document request contract
 export interface CreateDocumentTemplateRequest {
   organizationId: EntityId;
   type: DocumentTemplate["type"];

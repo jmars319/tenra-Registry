@@ -28,6 +28,7 @@ interface RentRunPageProps {
   }>;
 }
 
+// Query normalization boundary
 function normalizePeriod(value: string | undefined): string {
   return value && /^\d{4}-\d{2}$/u.test(value) ? value : getDefaultRentRunPeriod();
 }
@@ -73,6 +74,7 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
         </p>
       </div>
 
+      {/* Rent run controls boundary */}
       <form className="panel-card rent-run-controls no-print" method="get">
         <label className="form-field">
           <span>Billing month</span>
@@ -94,6 +96,7 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
       {postedMessage ? <p className="form-message">{postedMessage}</p> : null}
       {params?.error ? <p className="form-message form-message--error">{params.error}</p> : null}
 
+      {/* Charge summary boundary */}
       <div className="metric-grid">
         <article className="metric-card">
           <p>Ready to post</p>
@@ -117,6 +120,7 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
         </article>
       </div>
 
+      {/* Charge preview boundary */}
       <form action={postRentRunAction} className="panel-card">
         <div className="section-heading">
           <div>
@@ -204,6 +208,7 @@ export default async function RentRunPage({ searchParams }: RentRunPageProps) {
         )}
       </form>
 
+      {/* Rent history boundary */}
       <article className="panel-card">
         <div className="section-heading">
           <div>

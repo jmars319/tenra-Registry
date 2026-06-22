@@ -6,6 +6,8 @@ const root = process.cwd();
 const strict = process.argv.includes("--strict");
 const writeContracts = process.argv.includes("--write-contracts");
 const config = JSON.parse(fs.readFileSync(path.join(root, "scripts", "maintainability.config.json"), "utf8"));
+
+// Scan configuration boundary
 const styleExtensions = new Set([".css", ".scss", ".sass", ".less"]);
 const sourceExtensions = new Set(config.sourceExtensions);
 const ignoredSegments = new Set([
@@ -65,6 +67,7 @@ function walk(directory, files = []) {
   return files;
 }
 
+// Source inventory boundary
 function collectSourceRecords() {
   const files = config.sourceRoots
     .filter((directory) => fs.existsSync(path.join(root, directory)))
@@ -85,6 +88,7 @@ function configuredBudget(record) {
   return config.maxImplementationFileLines;
 }
 
+// Budget audit boundary
 function checkBudgets(records) {
   for (const record of records) {
     const budget = configuredBudget(record);
@@ -194,6 +198,7 @@ function prismaContracts() {
   };
 }
 
+// Contract snapshot boundary
 function contractSnapshot() {
   const rootPackage = JSON.parse(read("package.json"));
   const menuSource = read("apps/desktopapp/src/desktop/menu.ts");
@@ -232,6 +237,7 @@ function checkContracts() {
   }
 }
 
+// Report output boundary
 const records = collectSourceRecords();
 const implementationRecords = records.filter((record) => !styleExtensions.has(record.ext));
 const styleRecords = records.filter((record) => styleExtensions.has(record.ext));

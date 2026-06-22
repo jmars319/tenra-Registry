@@ -61,6 +61,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
+      {/* Operational metric boundary */}
       <div className="metric-grid">
         {operationalMetrics.map((metric) => (
           <article className="metric-card" key={metric.label}>
@@ -71,6 +72,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
+      {/* Demo workflow boundary */}
       <section className="panel-card panel-card--soft">
         <div className="section-heading">
           <div>
@@ -95,6 +97,7 @@ export default async function DashboardPage() {
       </section>
 
       <div className="overview-grid">
+        {/* Active rental boundary */}
         <section className="panel-card">
           <div className="section-heading">
             <div>
@@ -136,6 +139,7 @@ export default async function DashboardPage() {
           )}
         </section>
 
+        {/* Balance attention boundary */}
         <section className="panel-card">
           <div className="section-heading">
             <div>
@@ -171,6 +175,7 @@ export default async function DashboardPage() {
         </section>
       </div>
 
+      {/* Logistics module boundary */}
       <div className="overview-grid">
         <section className="panel-card">
           <div className="section-heading">
@@ -245,6 +250,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      {/* Handoff export boundary */}
       <section className="panel-card panel-card--soft">
         <div className="section-heading">
           <div>

@@ -20,6 +20,7 @@ interface TemplatePreset {
   body: string;
 }
 
+// Template preset boundary
 const defaultTemplatePreset: TemplatePreset = {
     id: "rental-agreement",
     label: "Container rental agreement",
@@ -96,6 +97,7 @@ const templatePresets: TemplatePreset[] = [
   }
 ];
 
+// Preset lookup boundary
 function getFieldError(fieldErrors: Record<string, string> | undefined, field: string): string | undefined {
   return fieldErrors?.[field];
 }
@@ -104,6 +106,7 @@ function getPreset(id: string): TemplatePreset {
   return templatePresets.find((preset) => preset.id === id) ?? defaultTemplatePreset;
 }
 
+// Template form boundary
 export function DocumentTemplateForm() {
   const [state, formAction] = useActionState(createDocumentTemplateAction, initialFormActionState);
   const formRef = useRef<HTMLFormElement>(null);
@@ -126,6 +129,7 @@ export function DocumentTemplateForm() {
       </div>
 
       <form action={formAction} className="form-stack" ref={formRef}>
+        {/* Preset selection boundary */}
         <label className="form-field">
           <span>Start with</span>
           <select
@@ -141,6 +145,7 @@ export function DocumentTemplateForm() {
           </select>
         </label>
 
+        {/* Template metadata boundary */}
         <div className="field-grid">
           <label className="form-field">
             <span>Kind of paperwork</span>
@@ -168,6 +173,7 @@ export function DocumentTemplateForm() {
           </label>
         </div>
 
+        {/* Template content boundary */}
         <label className="form-field">
           <span>Email subject line</span>
           <input

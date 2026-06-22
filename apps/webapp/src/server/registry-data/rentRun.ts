@@ -53,6 +53,7 @@ function formatRentRunSiteLabel(assignment: {
   return formatAssignmentSite(assignment).replace(/\n/gu, " · ") || "No rental site recorded";
 }
 
+// Billing calculation boundary
 function calculateRentRunAmount(input: {
   billingCadence: Assignment["billingCadence"];
   rateInCents: number;
@@ -98,6 +99,7 @@ function calculateRentRunAmount(input: {
   };
 }
 
+// Rent preview boundary
 export async function getRentRunPreview(
   period = getDefaultRentRunPeriod(),
   dueDate = getDefaultRentRunDueDate(period),
@@ -230,6 +232,7 @@ export async function getRentRunPreview(
   };
 }
 
+// Rent posting boundary
 export async function postRentRun(input: PostRentRunRequest): Promise<{
   postedCount: number;
   skippedCount: number;
@@ -301,6 +304,7 @@ export async function postRentRun(input: PostRentRunRequest): Promise<{
   };
 }
 
+// Rent history boundary
 export async function listRentRunHistory(): Promise<RentRunHistoryItem[]> {
   const organization = await getDefaultOrganization();
   const entries = await db.receivableEntry.findMany({

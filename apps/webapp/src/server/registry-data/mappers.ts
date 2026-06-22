@@ -31,6 +31,7 @@ import {
 } from "./shared";
 import type { PrismaGeneratedDocumentStatus, RegistryTransaction } from "./shared";
 
+// Activation safety boundary
 export async function findActiveAssignmentForAsset(
   transaction: RegistryTransaction,
   organizationId: string,
@@ -61,6 +62,7 @@ export function assertAssetCanBeActivated(assetStatus: AssetStatus): void {
   }
 }
 
+// Core serialization boundary
 export function serializeOrganization(record: {
   id: string;
   name: string;
@@ -241,6 +243,7 @@ export function serializeReceivableEntry(record: {
   };
 }
 
+// Document serialization boundary
 export function serializeDocumentTemplate(record: {
   id: string;
   organizationId: string;
@@ -309,6 +312,7 @@ export function serializeGeneratedDocument(record: {
   };
 }
 
+// Domain sort boundary
 export function sortCustomers<T extends { status: CustomerStatus; name: string }>(customers: T[]): T[] {
   return [...customers].sort((left, right) => {
     const statusDelta = (customerStatusOrder.get(left.status) ?? 99) - (customerStatusOrder.get(right.status) ?? 99);

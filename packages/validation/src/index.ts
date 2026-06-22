@@ -11,6 +11,7 @@ import {
 } from "@registry/domain";
 import { z } from "zod";
 
+// Shared scalar contract
 const entityIdSchema = z.string().min(1);
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u, "Expected YYYY-MM-DD");
 const monthSchema = z.string().regex(/^\d{4}-\d{2}$/u, "Expected YYYY-MM");
@@ -31,6 +32,7 @@ export const listOrganizationsSchema = z.object({
   status: z.enum(organizationStatuses).optional()
 });
 
+// Organization customer contract
 export const createCustomerSchema = z.object({
   organizationId: entityIdSchema,
   name: z.string().trim().min(1).max(120),
@@ -69,6 +71,7 @@ export const listAssetsSchema = z.object({
   status: z.enum(assetStatuses).optional()
 });
 
+// Rental lifecycle contract
 export const createAssignmentSchema = z.object({
   organizationId: entityIdSchema,
   customerId: entityIdSchema,
@@ -134,6 +137,7 @@ export const postRentRunSchema = z.object({
   assignmentIds: z.array(entityIdSchema).min(1)
 });
 
+// Document workflow contract
 export const createDocumentTemplateSchema = z.object({
   organizationId: entityIdSchema,
   type: z.enum(documentTemplateTypes),
@@ -184,6 +188,7 @@ export const updateGeneratedDocumentStatusSchema = z.object({
   status: z.enum(["printed", "emailed"])
 });
 
+// Handoff schema contract
 export const registryLedgerExportRowSchema = z.object({
   externalId: entityIdSchema,
   customerCode: entityIdSchema,

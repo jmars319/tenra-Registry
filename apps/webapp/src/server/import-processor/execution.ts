@@ -7,6 +7,7 @@ import { dateToIsoDate, dateToIsoDateTime, parseDateOnly } from "./csv";
 import { dryRunRegistryImport, normalizeImport } from "./normalize";
 import type { ImportBatchListItem, ImportDatasetKey, ImportPayloads, NormalizedImport } from "./types";
 
+// Summary count boundary
 export function getSummary(normalized: NormalizedImport): Record<string, number> {
   return {
     customers: normalized.customers.length,
@@ -17,6 +18,7 @@ export function getSummary(normalized: NormalizedImport): Record<string, number>
   };
 }
 
+// Source lookup boundary
 export async function findCustomerId(transaction: Prisma.TransactionClient, organizationId: string, customerCode: string): Promise<string> {
   const customer = await transaction.customer.findFirst({
     where: {
@@ -82,6 +84,7 @@ export async function findAssignmentId(
   return assignment.id;
 }
 
+// Execution transaction boundary
 export async function executeRegistryImport(payloads: ImportPayloads): Promise<ImportBatchListItem> {
   const organization = await getDefaultOrganization();
   const dryRun = await dryRunRegistryImport(payloads);
@@ -313,6 +316,7 @@ export async function listImportBatches(): Promise<ImportBatchListItem[]> {
   }));
 }
 
+// Rollback ordering boundary
 export function getRollbackPriority(targetModel: string): number {
   switch (targetModel) {
     case "ReceivableEntry":
@@ -328,6 +332,7 @@ export function getRollbackPriority(targetModel: string): number {
   }
 }
 
+// Rollback transaction boundary
 export async function rollbackImportBatch(batchId: string): Promise<void> {
   const organization = await getDefaultOrganization();
   const batch = await db.importBatch.findFirst({
@@ -443,6 +448,7 @@ export async function rollbackImportBatch(batchId: string): Promise<void> {
   });
 }
 
+// CSV template boundary
 export function getBlankCsvHeader(dataset: ImportDatasetKey): string {
   const spec = getImportSpecByKey(dataset) ?? registryImportSpecs.find((candidate) => candidate.key === "customers");
 

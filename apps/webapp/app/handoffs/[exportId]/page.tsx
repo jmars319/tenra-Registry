@@ -53,6 +53,7 @@ function diffSummary(original: unknown, current: Record<string, unknown>): strin
     .map((key) => `${key}: ${JSON.stringify(originalSummary[key] ?? null)} -> ${JSON.stringify(current[key] ?? null)}`);
 }
 
+// Replay summary boundary
 async function buildReplayPreview(exportId: string): Promise<ReplayPreview> {
   const audit = await getHandoffAuditByExportId(exportId);
   if (!audit) {
@@ -177,6 +178,7 @@ export default async function HandoffDetailPage({ params }: Params) {
         </div>
       </div>
 
+      {/* Audit state boundary */}
       <article className="panel-card">
         <div className="section-heading">
           <div>
@@ -213,6 +215,7 @@ export default async function HandoffDetailPage({ params }: Params) {
         </div>
       </article>
 
+      {/* Replay delivery boundary */}
       <article className="panel-card">
         <div className="section-heading">
           <div>
@@ -264,6 +267,7 @@ export default async function HandoffDetailPage({ params }: Params) {
         </form>
       </article>
 
+      {/* Replay history boundary */}
       <article className="panel-card">
         <div className="section-heading">
           <div>
@@ -302,6 +306,7 @@ export default async function HandoffDetailPage({ params }: Params) {
         )}
       </article>
 
+      {/* Summary drift boundary */}
       <article className="panel-card">
         <div className="section-heading">
           <div>
@@ -332,6 +337,7 @@ export default async function HandoffDetailPage({ params }: Params) {
         </div>
       </article>
 
+      {/* Payload preview boundary */}
       <article className="panel-card">
         <div className="section-heading">
           <div>

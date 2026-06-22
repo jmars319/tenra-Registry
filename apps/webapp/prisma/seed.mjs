@@ -19,6 +19,7 @@ function dateOnly(value) {
   return new Date(`${value}T00:00:00.000Z`);
 }
 
+// Seed organization boundary
 async function main() {
   const organization = await prisma.organization.upsert({
     where: {
@@ -69,6 +70,7 @@ async function main() {
     }
   });
 
+  // Seed inventory boundary
   const activeAsset = await prisma.asset.upsert({
     where: {
       organizationId_assetCode: {
@@ -135,6 +137,7 @@ async function main() {
     }
   });
 
+  // Seed rental boundary
   const activeRental = await prisma.assignment.upsert({
     where: {
       id: `seed-assignment-${organization.id}`
@@ -184,6 +187,7 @@ async function main() {
     }
   });
 
+  // Seed receivable boundary
   await prisma.receivableEntry.upsert({
     where: {
       id: `seed-receivable-rent-${organization.id}`
@@ -258,6 +262,7 @@ async function main() {
     }
   });
 
+  // Seed document template boundary
   const templates = [
     {
       id: `seed-template-rental-${organization.id}`,
@@ -374,6 +379,7 @@ async function main() {
     });
   }
 
+  // Seed generated document boundary
   await prisma.generatedDocument.upsert({
     where: {
       id: `seed-document-delivery-${organization.id}`

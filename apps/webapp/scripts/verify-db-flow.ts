@@ -13,6 +13,7 @@ const {
   transitionAssignmentStatus
 } = await import("../src/server/registry-data");
 
+// Verification helper boundary
 function assertCondition(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
@@ -56,6 +57,7 @@ let customerId: string | undefined;
 let assetId: string | undefined;
 
 try {
+  // Fixture creation boundary
   const customer = await createCustomer({
     organizationId: organization.id,
     name: `Verify Customer ${suffix}`,
@@ -77,6 +79,7 @@ try {
 
   assetId = asset.id;
 
+  // Assignment lifecycle boundary
   const assignmentOne = await createAssignment({
     organizationId: organization.id,
     customerId: customer.id,
@@ -237,6 +240,7 @@ try {
 
   console.log("Registry by Tenra DB lifecycle flow passed.");
 } finally {
+  // Cleanup boundary
   if (customerId) {
     await db.receivableEntry.deleteMany({
       where: {
