@@ -193,6 +193,13 @@
       "path": "/api/handoffs/replay/[exportId]"
     },
     {
+      "kind": "route",
+      "methods": [
+        "GET"
+      ],
+      "path": "/api/runtime/readiness"
+    },
+    {
       "kind": "page",
       "path": "/assets/[assetId]"
     },

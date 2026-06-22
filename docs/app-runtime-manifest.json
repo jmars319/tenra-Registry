@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "appId": "tenra-registry",
+  "displayName": "Registry by Tenra",
+  "productLine": "Tenra Business Suite",
+  "runtime": {
+    "primaryMode": "standalone-local-first-rental-sales-desk",
+    "uiShell": "electron-hosted-next-webapp",
+    "launch": [
+      "Registry by Tenra.app",
+      "pnpm run launch:desktop",
+      "pnpm run dev:web"
+    ],
+    "health": [
+      "GET /api/runtime/readiness",
+      "pnpm check:env",
+      "pnpm run verify:handoffs",
+      "pnpm run verify:replay"
+    ],
+    "degradedStates": [
+      "DATABASE_URL is missing",
+      "local Postgres is unavailable",
+      "Prisma migrations or seed data are missing",
+      "optional Ledger or Assembly endpoint is unavailable"
+    ]
+  },
+  "capabilities": [
+    "rental.sales-desk",
+    "customer.account-history",
+    "unit.inventory",
+    "receivables.review",
+    "ledger.export-handoff",
+    "assembly.document-request-handoff",
+    "handoff.audit-replay"
+  ],
+  "storage": {
+    "records": [
+      "Postgres Registry rental, customer, asset, receivable, document, and handoff audit records",
+      "Prisma migrations and seed data"
+    ],
+    "secrets": [
+      "DATABASE_URL in local environment"
+    ],
+    "logs": [
+      "desktop tenra-registry-desktop.log",
+      "local Next.js server startup log"
+    ],
+    "exports": [
+      "Ledger export JSON",
+      "Assembly document request JSON",
+      "handoff replay and receipt audit records"
+    ]
+  },
+  "integrations": {
+    "inbound": [
+      "handoff received callback",
+      "local import fixtures and seed data"
+    ],
+    "outbound": [
+      "tenra-registry.ledger-export.v1",
+      "tenra-registry.assembly-document-request.v1",
+      "explicit replay POST to operator-provided endpoints"
+    ],
+    "discovery": [
+      "docs/app-runtime-manifest.json",
+      "GET /api/runtime/readiness",
+      "docs/HANDOFF_REGISTRY.md"
+    ]
+  },
+  "security": {
+    "networkPolicy": "desktop shell starts the Registry web app on 127.0.0.1 and keeps Postgres credentials server-side",
+    "sensitiveActions": [
+      "handoff replay requires an explicit endpoint",
+      "Registry never reads sibling app private storage",
+      "Ledger and Assembly remain optional integrations"
+    ]
+  }
+}
